@@ -41,7 +41,7 @@ const PlantReminderWidget = ({ widget, isSelected, onClick, onUpdate }: PlantRem
       ...widget.settings,
       last_watered: new Date().toISOString(),
     };
-    onUpdate(newSettings);
+    onUpdate?.(newSettings);
   };
 
   return (

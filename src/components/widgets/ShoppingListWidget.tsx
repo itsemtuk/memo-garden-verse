@@ -32,7 +32,7 @@ const ShoppingListWidget = ({ widget, isSelected, onClick, onUpdate }: ShoppingL
   const addItem = () => {
     if (newItem.trim()) {
       const updatedItems = [...items, { id: Date.now(), text: newItem.trim(), completed: false }];
-      onUpdate({ ...widget.settings, items: updatedItems });
+      onUpdate?.({ ...widget.settings, items: updatedItems });
       setNewItem("");
     }
   };
@@ -41,7 +41,7 @@ const ShoppingListWidget = ({ widget, isSelected, onClick, onUpdate }: ShoppingL
     const updatedItems = items.map((item: any) =>
       item.id === itemId ? { ...item, completed: !item.completed } : item
     );
-    onUpdate({ ...widget.settings, items: updatedItems });
+    onUpdate?.({ ...widget.settings, items: updatedItems });
   };
 
   return (
