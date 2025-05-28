@@ -22,16 +22,24 @@ export interface Board {
   id: string;
   name: string;
   description: string;
-  isPublic: boolean;
+  is_public: boolean;
+  owner_id: string;
+  collaborators: string[];
   widgets: Widget[];
-  createdAt: Date;
-  updatedAt: Date;
-  owner: string;
-  collaborators?: string[];
+  created_at: string;
+  updated_at: string;
 }
 
 export interface User {
   id: string;
   name: string;
   profilePic?: string;
+}
+
+export interface Profile {
+  id: string;
+  username: string | null;
+  avatar_url: string | null;
+  created_at: string;
+  updated_at: string;
 }
