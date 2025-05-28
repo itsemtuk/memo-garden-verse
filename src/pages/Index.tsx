@@ -24,11 +24,12 @@ const Index = () => {
       id: uuidv4(),
       name,
       description: "A new board",
-      isPublic: false,
+      is_public: false,
       widgets: [],
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      owner: "user1", // In a real app, this would be the current user's ID
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      owner_id: "user1", // In a real app, this would be the current user's ID
+      collaborators: [],
     };
     
     setBoards((prevBoards) => [...prevBoards, newBoard]);
@@ -40,7 +41,7 @@ const Index = () => {
     setBoards(prevBoards => 
       prevBoards.map(board => 
         board.id === currentBoardId 
-          ? { ...board, widgets: updatedWidgets, updatedAt: new Date() } 
+          ? { ...board, widgets: updatedWidgets, updated_at: new Date().toISOString() } 
           : board
       )
     );
