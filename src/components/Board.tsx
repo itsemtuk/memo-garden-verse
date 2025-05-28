@@ -124,7 +124,11 @@ const Board = ({ boardId, onUpdate }: BoardProps) => {
         })}
       </DndContext>
 
-      <AddWidgetMenu onAddWidget={handleAddWidget} centerPosition={centerPosition} />
+      <AddWidgetMenu 
+        onAddWidget={handleAddWidget} 
+        centerPosition={centerPosition} 
+        boardId={boardId}
+      />
     </div>
   );
 };

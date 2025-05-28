@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Widget } from '@/types';
+import { CreateWidgetData } from '@/types/widget';
 
 interface Note {
   id: string;
@@ -11,6 +12,8 @@ interface Note {
   y: number;
   rotation: number;
   color: string;
+  widget_type: string;
+  widget_settings: any;
   created_at: string;
   updated_at: string;
 }
@@ -40,16 +43,18 @@ export const useNotes = (boardId: string) => {
     }
   }, [boardId]);
 
-  // Create a new note
-  const createNote = useCallback(async (content: string, x: number, y: number) => {
+  // Create a new widget
+  const createWidget = useCallback(async (widgetData: CreateWidgetData) => {
     try {
       const { data, error } = await supabase
         .from('notes')
         .insert({
           board_id: boardId,
-          content,
-          x,
-          y,
+          content: widgetData.content,
+          x: widgetData.x,
+          y: widgetData.y,
+          widget_type: widgetData.type,
+          widget_settings: widgetData.settings || {},
           rotation: Math.floor(Math.random() * 6) - 3, // Random rotation between -3 and 3
         })
         .select()
@@ -58,10 +63,20 @@ export const useNotes = (boardId: string) => {
       if (error) throw error;
       return data;
     } catch (err) {
-      console.error('Error creating note:', err);
+      console.error('Error creating widget:', err);
       throw err;
     }
   }, [boardId]);
+
+  // Create a new note (backwards compatibility)
+  const createNote = useCallback(async (content: string, x: number, y: number) => {
+    return createWidget({
+      type: 'note',
+      content,
+      x,
+      y,
+    });
+  }, [createWidget]);
 
   // Update note position
   const updateNotePosition = useCallback(async (noteId: string, x: number, y: number) => {
@@ -146,11 +161,11 @@ export const useNotes = (boardId: string) => {
   // Convert notes to widgets format for compatibility with existing Board component
   const notesAsWidgets: Widget[] = notes.map(note => ({
     id: note.id,
-    type: 'note' as const,
+    type: note.widget_type as 'note' | 'image',
     content: note.content,
     position: { x: note.x, y: note.y },
     rotation: note.rotation,
-    size: { width: '200px', height: 'auto' },
+    size: note.widget_settings?.size || { width: '200px', height: 'auto' },
     createdAt: new Date(note.created_at),
     updatedAt: new Date(note.updated_at),
   }));
@@ -161,6 +176,7 @@ export const useNotes = (boardId: string) => {
     loading,
     error,
     createNote,
+    createWidget,
     updateNotePosition,
     updateNoteContent,
     deleteNote,

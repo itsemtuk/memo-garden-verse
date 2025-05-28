@@ -54,6 +54,8 @@ export type Database = {
           id: string
           rotation: number | null
           updated_at: string | null
+          widget_settings: Json | null
+          widget_type: string
           x: number
           y: number
         }
@@ -65,6 +67,8 @@ export type Database = {
           id?: string
           rotation?: number | null
           updated_at?: string | null
+          widget_settings?: Json | null
+          widget_type?: string
           x?: number
           y?: number
         }
@@ -76,6 +80,8 @@ export type Database = {
           id?: string
           rotation?: number | null
           updated_at?: string | null
+          widget_settings?: Json | null
+          widget_type?: string
           x?: number
           y?: number
         }

@@ -1,6 +1,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { Widget } from '@/types';
+import { CreateWidgetData } from '@/types/widget';
 import { useNotes } from './useNotes';
 
 export const useBoardData = (boardId: string) => {
@@ -8,6 +9,7 @@ export const useBoardData = (boardId: string) => {
     notesAsWidgets,
     loading: notesLoading,
     createNote,
+    createWidget,
     updateNotePosition,
     updateNoteContent,
     deleteNote,
@@ -26,9 +28,19 @@ export const useBoardData = (boardId: string) => {
         console.error('Failed to create note:', error);
       }
     } else if (widget.type === 'image') {
-      setImageWidgets(prev => [...prev, widget]);
+      try {
+        await createWidget({
+          type: 'image',
+          content: widget.content,
+          x: widget.position.x,
+          y: widget.position.y,
+          settings: { size: widget.size }
+        });
+      } catch (error) {
+        console.error('Failed to create image widget:', error);
+      }
     }
-  }, [createNote]);
+  }, [createNote, createWidget]);
 
   const handleUpdateWidget = useCallback(async (widgetId: string, updatedContent: string) => {
     // Check if it's a note widget (from database)
