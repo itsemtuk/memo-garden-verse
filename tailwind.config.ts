@@ -63,16 +63,22 @@ export default {
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
 				},
-				// Garden theme colors
+				// Updated Garden theme colors - green/blue/brown palette
 				garden: {
-					primary: '#9b87f5',    // Purple primary color
-					secondary: '#7E69AB',  // Secondary purple
-					accent: '#F97316',     // Bright orange accent
-					note: '#FEF7CD',       // Soft yellow for notes
-					image: '#D3E4FD',      // Soft blue for image widgets
-					corkLight: '#e5ac69',  // Light cork color
-					corkDark: '#c68642',   // Dark cork color
-					text: '#222222',       // Dark text color
+					primary: '#256D85',       // Blue-green primary
+					'primary-light': '#4FB6D3', // Light blue
+					'primary-dark': '#1B4B5A',  // Dark blue-green
+					secondary: '#3A6B35',     // Forest green
+					'secondary-light': '#5A8D4D', // Light green
+					'secondary-dark': '#2B4A26',  // Dark green
+					accent: '#D2691E',        // Saddle brown accent
+					note: '#F0F8E8',          // Very light green for notes
+					image: '#E8F4F8',         // Very light blue for image widgets
+					corkLight: '#D7BFAE',     // Light cork/tan color
+					corkDark: '#A67B5B',      // Medium cork color
+					corkDarkest: '#6F4E37',   // Dark brown cork
+					text: '#000000',          // Black text
+					textSecondary: '#4B5563', // Cool gray for secondary text
 				}
 			},
 			borderRadius: {
@@ -108,7 +114,7 @@ export default {
 				'float': 'float 6s ease-in-out infinite'
 			},
 			backgroundImage: {
-				'cork-pattern': "url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1IiBoZWlnaHQ9IjUiPgo8cmVjdCB3aWR0aD0iNSIgaGVpZ2h0PSI1IiBmaWxsPSIjZTVhYzY5Ij48L3JlY3Q+CjxwYXRoIGQ9Ik0wIDVMNSAwWk02IDRMNCA2Wk0tMSAxTDEgLTFaIiBzdHJva2U9IiNjNjg2NDIiIHN0cm9rZS13aWR0aD0iMSI+PC9wYXRoPgo8L3N2Zz4=')"
+				'cork-pattern': "url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1IiBoZWlnaHQ9IjUiPgo8cmVjdCB3aWR0aD0iNSIgaGVpZ2h0PSI1IiBmaWxsPSIjRDdCRkFFIj48L3JlY3Q+CjxwYXRoIGQ9Ik0wIDVMNSAwWk02IDRMNCA2Wk0tMSAxTDEgLTFaIiBzdHJva2U9IiNBNjdCNUIiIHN0cm9rZS13aWR0aD0iMSI+PC9wYXRoPgo8L3N2Zz4=')"
 			}
 		}
 	},

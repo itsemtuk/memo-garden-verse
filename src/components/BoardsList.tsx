@@ -30,7 +30,7 @@ const BoardsList = ({ boards, onBoardSelect, className = "" }: BoardsListProps) 
           </CardContent>
           <CardFooter>
             <Button 
-              className="w-full bg-garden-primary hover:bg-garden-secondary"
+              className="w-full bg-garden-primary hover:bg-garden-primary-dark text-white"
               onClick={() => onBoardSelect(board.id)}
             >
               View Board

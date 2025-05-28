@@ -101,7 +101,7 @@ const AuthForm = () => {
             
             <Button 
               type="submit" 
-              className="w-full bg-garden-primary hover:bg-garden-secondary"
+              className="w-full bg-garden-primary hover:bg-garden-primary-dark text-white"
               disabled={isLoading}
             >
               {isLoading ? 'Loading...' : (isLogin ? 'Sign In' : 'Sign Up')}
