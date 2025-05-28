@@ -10,7 +10,7 @@ interface PlantReminderWidgetProps {
   widget: Widget;
   isSelected: boolean;
   onClick: () => void;
-  onUpdate: (settings: any) => void;
+  onUpdate?: (settings: any) => void;
 }
 
 const PlantReminderWidget = ({ widget, isSelected, onClick, onUpdate }: PlantReminderWidgetProps) => {

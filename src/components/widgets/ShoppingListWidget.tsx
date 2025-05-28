@@ -11,7 +11,7 @@ interface ShoppingListWidgetProps {
   widget: Widget;
   isSelected: boolean;
   onClick: () => void;
-  onUpdate: (settings: any) => void;
+  onUpdate?: (settings: any) => void;
 }
 
 const ShoppingListWidget = ({ widget, isSelected, onClick, onUpdate }: ShoppingListWidgetProps) => {
