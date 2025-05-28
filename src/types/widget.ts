@@ -6,6 +6,7 @@ export interface WidgetSettings {
   };
   imagePath?: string;
   zIndex?: number;
+  [key: string]: any; // Allow additional properties for different widget types
 }
 
 export interface CreateWidgetData {

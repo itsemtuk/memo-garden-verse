@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect } from 'react';
 import { Widget } from '@/types';
 import { CreateWidgetData } from '@/types/widget';
@@ -29,12 +28,21 @@ export const useBoardData = (boardId: string) => {
       }
     } else if (widget.type === 'image') {
       try {
+        const sizeSettings = widget.size ? {
+          width: typeof widget.size.width === 'string' ? 
+            parseInt(widget.size.width.replace('px', ''), 10) : 
+            widget.size.width,
+          height: typeof widget.size.height === 'string' ? 
+            parseInt(widget.size.height.replace('px', ''), 10) || 200 : 
+            widget.size.height
+        } : { width: 300, height: 200 };
+
         await createWidget({
           type: 'image',
           content: widget.content,
           x: widget.position.x,
           y: widget.position.y,
-          settings: { size: widget.size }
+          settings: { size: sizeSettings }
         });
       } catch (error) {
         console.error('Failed to create image widget:', error);
