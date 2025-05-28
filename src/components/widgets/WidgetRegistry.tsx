@@ -54,6 +54,7 @@ export const WidgetRenderer = ({ widget, isSelected, onClick, onUpdate, onUpdate
   }
 
   // For specialized widgets (weather, plant_reminder, shopping_list)
+  // These widgets use onUpdateSettings to update their widget_settings
   return (
     <WidgetComponent
       widget={widget}
