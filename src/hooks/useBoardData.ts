@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useEffect } from 'react';
 import { Widget } from '@/types';
 import { CreateWidgetData } from '@/types/widget';
@@ -11,6 +12,7 @@ export const useBoardData = (boardId: string) => {
     createWidget,
     updateNotePosition,
     updateNoteContent,
+    updateWidgetSettings,
     deleteNote,
   } = useNotes(boardId);
 
@@ -26,7 +28,7 @@ export const useBoardData = (boardId: string) => {
       } catch (error) {
         console.error('Failed to create note:', error);
       }
-    } else if (widget.type === 'image') {
+    } else if (['image', 'weather', 'plant_reminder', 'shopping_list', 'social'].includes(widget.type)) {
       try {
         const sizeSettings = widget.size ? {
           width: typeof widget.size.width === 'string' ? 
@@ -38,14 +40,17 @@ export const useBoardData = (boardId: string) => {
         } : { width: 300, height: 200 };
 
         await createWidget({
-          type: 'image',
+          type: widget.type as 'note' | 'image',
           content: widget.content,
           x: widget.position.x,
           y: widget.position.y,
-          settings: { size: sizeSettings }
+          settings: { 
+            size: sizeSettings,
+            ...widget.settings
+          }
         });
       } catch (error) {
-        console.error('Failed to create image widget:', error);
+        console.error('Failed to create widget:', error);
       }
     }
   }, [createNote, createWidget]);
@@ -69,6 +74,26 @@ export const useBoardData = (boardId: string) => {
       ));
     }
   }, [notesAsWidgets, updateNoteContent]);
+
+  const handleUpdateWidgetSettings = useCallback(async (widgetId: string, settings: any) => {
+    // Check if it's a widget from database
+    const isDbWidget = notesAsWidgets.some(w => w.id === widgetId);
+    
+    if (isDbWidget) {
+      try {
+        await updateWidgetSettings(widgetId, settings);
+      } catch (error) {
+        console.error('Failed to update widget settings:', error);
+      }
+    } else {
+      // Handle local widgets
+      setImageWidgets(prev => prev.map(widget =>
+        widget.id === widgetId
+          ? { ...widget, settings, updatedAt: new Date() }
+          : widget
+      ));
+    }
+  }, [notesAsWidgets, updateWidgetSettings]);
 
   const handleWidgetPositionChange = useCallback(async (widgetId: string, x: number, y: number) => {
     // Check if it's a note widget (from database)
@@ -95,6 +120,7 @@ export const useBoardData = (boardId: string) => {
     loading: notesLoading,
     handleAddWidget,
     handleUpdateWidget,
+    handleUpdateWidgetSettings,
     handleWidgetPositionChange,
   };
 };

@@ -1,6 +1,5 @@
 
-import Note from "@/components/widgets/Note";
-import ImageWidget from "@/components/widgets/ImageWidget";
+import { WidgetRenderer } from "@/components/widgets/WidgetRegistry";
 import AddWidgetMenu from "@/components/AddWidgetMenu";
 import { Widget } from "@/types";
 import { DndContext, DragEndEvent, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
@@ -19,6 +18,7 @@ const Board = ({ boardId, onUpdate }: BoardProps) => {
     handleAddWidget,
     handleUpdateWidget,
     handleWidgetPositionChange,
+    handleUpdateWidgetSettings,
   } = useBoardData(boardId);
 
   const [selectedWidgetId, setSelectedWidgetId] = useState<string | null>(null);
@@ -91,37 +91,21 @@ const Board = ({ boardId, onUpdate }: BoardProps) => {
 
   return (
     <div 
-      className="cork-board relative w-full h-[calc(100vh-64px)] overflow-auto"
+      className="cork-board board-canvas relative w-full h-[calc(100vh-64px)] overflow-auto"
       onClick={handleBoardClick}
       ref={boardRef}
     >
       <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-        {widgets.map((widget) => {
-          if (widget.type === "note") {
-            return (
-              <Note
-                key={widget.id}
-                widget={widget}
-                isSelected={selectedWidgetId === widget.id}
-                onClick={() => setSelectedWidgetId(widget.id)}
-                onUpdate={(content) => handleUpdateWidget(widget.id, content)}
-              />
-            );
-          }
-          
-          if (widget.type === "image") {
-            return (
-              <ImageWidget
-                key={widget.id}
-                widget={widget}
-                isSelected={selectedWidgetId === widget.id}
-                onClick={() => setSelectedWidgetId(widget.id)}
-              />
-            );
-          }
-          
-          return null;
-        })}
+        {widgets.map((widget) => (
+          <WidgetRenderer
+            key={widget.id}
+            widget={widget}
+            isSelected={selectedWidgetId === widget.id}
+            onClick={() => setSelectedWidgetId(widget.id)}
+            onUpdate={(content) => handleUpdateWidget(widget.id, content)}
+            onUpdateSettings={(settings) => handleUpdateWidgetSettings && handleUpdateWidgetSettings(widget.id, settings)}
+          />
+        ))}
       </DndContext>
 
       <AddWidgetMenu 

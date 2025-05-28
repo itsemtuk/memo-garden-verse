@@ -101,6 +101,14 @@
     box-shadow: inset 0 0 100px rgba(0, 0, 0, 0.1);
   }
 
+  .board-canvas {
+    background-image: url('https://images.unsplash.com/photo-1464983953574-0892a716854b?auto=format&fit=crop&w=1200&q=80');
+    background-size: cover;
+    background-position: center;
+    background-blend-mode: soft-light;
+    @apply bg-garden-corkLight;
+  }
+
   .widget {
     @apply rounded-md shadow-md transition-all duration-200;
   }
@@ -112,6 +120,21 @@
 
   .widget-image {
     @apply bg-garden-image p-2 -rotate-1;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16);
+  }
+
+  .widget-weather {
+    @apply bg-white p-2 rotate-1;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16);
+  }
+
+  .widget-plant {
+    @apply bg-white p-2 -rotate-2;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16);
+  }
+
+  .widget-shopping {
+    @apply bg-white p-2 rotate-2;
     box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16);
   }
 

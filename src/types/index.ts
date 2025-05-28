@@ -1,5 +1,5 @@
 
-export type WidgetType = 'note' | 'image';
+export type WidgetType = 'note' | 'image' | 'weather' | 'plant_reminder' | 'shopping_list' | 'social';
 
 export interface Widget {
   id: string;
@@ -13,6 +13,9 @@ export interface Widget {
   size?: {
     width: number | string;
     height: number | string;
+  };
+  settings?: {
+    [key: string]: any;
   };
   createdAt: Date;
   updatedAt: Date;

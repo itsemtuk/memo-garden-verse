@@ -1,3 +1,4 @@
+
 import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Widget } from '@/types';
@@ -107,6 +108,24 @@ export const useNotes = (boardId: string) => {
     }
   }, []);
 
+  // Update widget settings
+  const updateWidgetSettings = useCallback(async (widgetId: string, settings: any) => {
+    try {
+      const { error } = await supabase
+        .from('notes')
+        .update({ 
+          widget_settings: settings, 
+          updated_at: new Date().toISOString() 
+        })
+        .eq('id', widgetId);
+
+      if (error) throw error;
+    } catch (err) {
+      console.error('Error updating widget settings:', err);
+      throw err;
+    }
+  }, []);
+
   // Delete note
   const deleteNote = useCallback(async (noteId: string) => {
     try {
@@ -160,11 +179,12 @@ export const useNotes = (boardId: string) => {
   // Convert notes to widgets format for compatibility with existing Board component
   const notesAsWidgets: Widget[] = notes.map(note => ({
     id: note.id,
-    type: note.widget_type as 'note' | 'image',
+    type: note.widget_type as 'note' | 'image' | 'weather' | 'plant_reminder' | 'shopping_list' | 'social',
     content: note.content,
     position: { x: note.x, y: note.y },
     rotation: note.rotation,
     size: note.widget_settings?.size || { width: '200px', height: 'auto' },
+    settings: note.widget_settings,
     createdAt: new Date(note.created_at),
     updatedAt: new Date(note.updated_at),
   }));
@@ -178,6 +198,7 @@ export const useNotes = (boardId: string) => {
     createWidget,
     updateNotePosition,
     updateNoteContent,
+    updateWidgetSettings,
     deleteNote,
     refreshNotes: fetchNotes,
   };
