@@ -14,6 +14,8 @@ import { Search } from "lucide-react";
 import { Board } from "@/types";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
+import UserProfile from "@/components/UserProfile";
 
 interface NavBarProps {
   currentBoard: Board;
@@ -25,6 +27,7 @@ interface NavBarProps {
 const NavBar = ({ currentBoard, availableBoards, onBoardChange, onCreateBoard }: NavBarProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [newBoardName, setNewBoardName] = useState("");
+  const { user } = useAuth();
 
   const handleCreateBoard = () => {
     if (newBoardName.trim()) {
@@ -61,7 +64,7 @@ const NavBar = ({ currentBoard, availableBoards, onBoardChange, onCreateBoard }:
                         >
                           {board.name}
                           <span className="ml-2 text-xs opacity-70">
-                            {board.isPublic ? "(Public)" : "(Private)"}
+                            {board.is_public ? "(Public)" : "(Private)"}
                           </span>
                         </Button>
                       </NavigationMenuLink>
@@ -132,9 +135,13 @@ const NavBar = ({ currentBoard, availableBoards, onBoardChange, onCreateBoard }:
           />
         </div>
         
-        <Button className="bg-garden-primary hover:bg-garden-secondary text-white">
-          Sign In
-        </Button>
+        {user ? (
+          <UserProfile />
+        ) : (
+          <Button className="bg-garden-primary hover:bg-garden-secondary text-white">
+            Sign In
+          </Button>
+        )}
       </div>
     </div>
   );

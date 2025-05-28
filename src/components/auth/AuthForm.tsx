@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 const AuthForm = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -12,94 +12,93 @@ const AuthForm = () => {
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
   
   const { signIn, signUp } = useAuth();
-  const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
+    setError('');
+
     try {
       if (isLogin) {
         await signIn(email, password);
-        toast({
-          title: "Welcome back!",
-          description: "You have successfully signed in.",
-        });
       } else {
         await signUp(email, password, username);
-        toast({
-          title: "Account created!",
-          description: "Please check your email to verify your account.",
-        });
       }
+      navigate('/');
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      setError(error.message || 'An error occurred');
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-blue-50 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold text-garden-primary">
-            {isLogin ? 'Welcome Back' : 'Join MemoGarden'}
+        <CardHeader>
+          <CardTitle className="text-2xl text-center">
+            <span className="text-garden-primary">Memo</span>Garden
           </CardTitle>
-          <CardDescription>
-            {isLogin 
-              ? 'Sign in to access your boards' 
-              : 'Create an account to start building your garden'
-            }
+          <CardDescription className="text-center">
+            {isLogin ? 'Sign in to your account' : 'Create a new account'}
           </CardDescription>
         </CardHeader>
-        
-        <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4">
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <div className="p-3 text-sm text-red-600 bg-red-50 rounded-md">
+                {error}
+              </div>
+            )}
+            
             {!isLogin && (
               <div>
-                <label className="text-sm font-medium">Username</label>
+                <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
+                  Username
+                </label>
                 <Input
+                  id="username"
                   type="text"
-                  placeholder="Your username"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  required
+                  placeholder="Enter your username"
+                  required={!isLogin}
                 />
               </div>
             )}
             
             <div>
-              <label className="text-sm font-medium">Email</label>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                Email
+              </label>
               <Input
+                id="email"
                 type="email"
-                placeholder="your.email@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter your email"
                 required
               />
             </div>
             
             <div>
-              <label className="text-sm font-medium">Password</label>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                Password
+              </label>
               <Input
+                id="password"
                 type="password"
-                placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter your password"
                 required
-                minLength={6}
               />
             </div>
-          </CardContent>
-          
-          <CardFooter className="flex flex-col space-y-4">
+            
             <Button 
               type="submit" 
               className="w-full bg-garden-primary hover:bg-garden-secondary"
@@ -107,20 +106,18 @@ const AuthForm = () => {
             >
               {isLoading ? 'Loading...' : (isLogin ? 'Sign In' : 'Sign Up')}
             </Button>
-            
-            <button
-              type="button"
-              onClick={() => setIsLogin(!isLogin)}
-              className="text-sm text-garden-primary hover:underline"
-            >
-              {isLogin 
-                ? "Don't have an account? Sign up" 
-                : "Already have an account? Sign in"
-              }
-            </button>
-          </CardFooter>
-        </Card>
-      </div>
+          </form>
+        </CardContent>
+        <CardFooter className="flex justify-center">
+          <Button
+            variant="link"
+            onClick={() => setIsLogin(!isLogin)}
+            className="text-garden-primary"
+          >
+            {isLogin ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
+          </Button>
+        </CardFooter>
+      </Card>
     </div>
   );
 };

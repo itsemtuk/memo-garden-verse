@@ -21,7 +21,7 @@ export interface Widget {
 export interface Board {
   id: string;
   name: string;
-  description: string;
+  description?: string;
   is_public: boolean;
   owner_id: string;
   collaborators: string[];

@@ -25,7 +25,7 @@ const BoardsList = ({ boards, onBoardSelect, className = "" }: BoardsListProps) 
               {board.widgets.length} item{board.widgets.length !== 1 ? "s" : ""}
             </div>
             <div className="text-xs mt-1">
-              {board.isPublic ? "Public board" : "Private board"}
+              {board.is_public ? "Public board" : "Private board"}
             </div>
           </CardContent>
           <CardFooter>
