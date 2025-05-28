@@ -5,23 +5,26 @@ import AddWidgetMenu from "@/components/AddWidgetMenu";
 import { Widget } from "@/types";
 import { DndContext, DragEndEvent, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { v4 as uuidv4 } from "uuid";
+import { useBoardData } from "@/hooks/useBoardData";
 
 interface BoardProps {
-  widgets: Widget[];
-  onUpdate: (widgets: Widget[]) => void;
+  boardId: string;
+  onUpdate?: (widgets: Widget[]) => void;
 }
 
-const Board = ({ widgets, onUpdate }: BoardProps) => {
-  const [boardWidgets, setBoardWidgets] = useState<Widget[]>(widgets);
+const Board = ({ boardId, onUpdate }: BoardProps) => {
+  const {
+    widgets,
+    loading,
+    handleAddWidget,
+    handleUpdateWidget,
+    handleWidgetPositionChange,
+  } = useBoardData(boardId);
+
   const [selectedWidgetId, setSelectedWidgetId] = useState<string | null>(null);
   const [centerPosition, setCenterPosition] = useState({ x: 400, y: 300 });
   const boardRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    setBoardWidgets(widgets);
-  }, [widgets]);
-  
   // Update center position based on viewport
   useEffect(() => {
     const updateCenterPosition = () => {
@@ -42,6 +45,13 @@ const Board = ({ widgets, onUpdate }: BoardProps) => {
     };
   }, []);
 
+  // Notify parent component of widget changes
+  useEffect(() => {
+    if (onUpdate) {
+      onUpdate(widgets);
+    }
+  }, [widgets, onUpdate]);
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -50,57 +60,34 @@ const Board = ({ widgets, onUpdate }: BoardProps) => {
     })
   );
 
-  const handleDragEnd = (event: DragEndEvent) => {
+  const handleDragEnd = useCallback(async (event: DragEndEvent) => {
     const { active, delta } = event;
     const widgetId = active.id as string;
     
-    setBoardWidgets((currentWidgets) => {
-      return currentWidgets.map((widget) => {
-        if (widget.id === widgetId) {
-          return {
-            ...widget,
-            position: {
-              x: widget.position.x + delta.x,
-              y: widget.position.y + delta.y,
-            },
-          };
-        }
-        return widget;
-      });
-    });
-  };
+    const widget = widgets.find(w => w.id === widgetId);
+    if (!widget) return;
 
-  const handleAddWidget = useCallback((widget: Widget) => {
-    const updatedWidgets = [...boardWidgets, widget];
-    setBoardWidgets(updatedWidgets);
-    onUpdate(updatedWidgets);
-    setSelectedWidgetId(widget.id);
-  }, [boardWidgets, onUpdate]);
-  
-  const handleUpdateWidget = useCallback((widgetId: string, updatedContent: string) => {
-    const updatedWidgets = boardWidgets.map((widget) => {
-      if (widget.id === widgetId) {
-        return {
-          ...widget,
-          content: updatedContent,
-          updatedAt: new Date(),
-        };
-      }
-      return widget;
-    });
-    
-    setBoardWidgets(updatedWidgets);
-    onUpdate(updatedWidgets);
-  }, [boardWidgets, onUpdate]);
+    const newX = widget.position.x + delta.x;
+    const newY = widget.position.y + delta.y;
+
+    try {
+      await handleWidgetPositionChange(widgetId, newX, newY);
+    } catch (error) {
+      console.error('Failed to update widget position:', error);
+    }
+  }, [widgets, handleWidgetPositionChange]);
 
   const handleBoardClick = () => {
     setSelectedWidgetId(null);
   };
 
-  useEffect(() => {
-    // Save changes to parent when widgets change
-    onUpdate(boardWidgets);
-  }, [boardWidgets, onUpdate]);
+  if (loading) {
+    return (
+      <div className="cork-board relative w-full h-[calc(100vh-64px)] overflow-auto flex items-center justify-center">
+        <div className="text-garden-text">Loading board...</div>
+      </div>
+    );
+  }
 
   return (
     <div 
@@ -109,7 +96,7 @@ const Board = ({ widgets, onUpdate }: BoardProps) => {
       ref={boardRef}
     >
       <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-        {boardWidgets.map((widget) => {
+        {widgets.map((widget) => {
           if (widget.type === "note") {
             return (
               <Note

@@ -45,6 +45,50 @@ export type Database = {
         }
         Relationships: []
       }
+      notes: {
+        Row: {
+          board_id: string
+          color: string | null
+          content: string
+          created_at: string | null
+          id: string
+          rotation: number | null
+          updated_at: string | null
+          x: number
+          y: number
+        }
+        Insert: {
+          board_id: string
+          color?: string | null
+          content: string
+          created_at?: string | null
+          id?: string
+          rotation?: number | null
+          updated_at?: string | null
+          x?: number
+          y?: number
+        }
+        Update: {
+          board_id?: string
+          color?: string | null
+          content?: string
+          created_at?: string | null
+          id?: string
+          rotation?: number | null
+          updated_at?: string | null
+          x?: number
+          y?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notes_board_id_fkey"
+            columns: ["board_id"]
+            isOneToOne: false
+            referencedRelation: "boards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null

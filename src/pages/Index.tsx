@@ -50,7 +50,7 @@ const Index = () => {
   // React to URL changes or handle deep linking
   useEffect(() => {
     const handleHashChange = () => {
-      const hash = window.location.hash.substring(1); // Remove the # character
+      const hash = window.location.hash.substring(1);
       if (hash && boards.some(board => board.id === hash)) {
         setCurrentBoardId(hash);
         setShowBoards(false);
@@ -58,7 +58,7 @@ const Index = () => {
     };
 
     window.addEventListener('hashchange', handleHashChange);
-    handleHashChange(); // Check on initial load
+    handleHashChange();
     
     return () => {
       window.removeEventListener('hashchange', handleHashChange);
@@ -92,7 +92,10 @@ const Index = () => {
             />
           </div>
         ) : (
-          <Board widgets={currentBoard.widgets} onUpdate={handleUpdateWidgets} />
+          <Board 
+            boardId={currentBoardId} 
+            onUpdate={handleUpdateWidgets} 
+          />
         )}
       </main>
     </div>
