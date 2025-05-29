@@ -32,7 +32,7 @@ export const WidgetRenderer = ({ widget, isSelected, onClick, onUpdate, onUpdate
   }
 
   // Handle different prop patterns for different widget types
-  if (widget.type === 'note') {
+  if (widget.type === 'note' || widget.type === 'social') {
     return (
       <WidgetComponent
         widget={widget}
