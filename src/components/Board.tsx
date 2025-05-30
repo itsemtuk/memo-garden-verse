@@ -1,22 +1,19 @@
 
 import WidgetStore from "@/components/WidgetStore";
 import { Widget } from "@/types";
-import { DragEndEvent, DragStartEvent, DragMoveEvent, PointerSensor, TouchSensor, useSensor, useSensors } from "@dnd-kit/core";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { PointerSensor, TouchSensor, useSensor, useSensors } from "@dnd-kit/core";
+import { useCallback } from "react";
 import { useBoardData } from "@/hooks/useBoardData";
 import { usePresence } from "@/hooks/usePresence";
-import { Plus } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import CursorDisplay from "@/components/collaboration/CursorDisplay";
 import VirtualizedBoard from "@/components/VirtualizedBoard";
 import BoardControls from "@/components/board/BoardControls";
-import { 
-  Drawer,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from "@/components/ui/drawer";
+import EmptyBoardState from "@/components/board/EmptyBoardState";
+import MobileWidgetStore from "@/components/board/MobileWidgetStore";
+import { useBoardDragHandling } from "@/hooks/useBoardDragHandling";
+import { useBoardState } from "@/hooks/useBoardState";
+import { useBoardWidgetControls } from "@/components/board/BoardWidgetControls";
 
 interface BoardProps {
   boardId: string;
@@ -40,76 +37,46 @@ const Board = ({ boardId, onUpdate }: BoardProps) => {
 
   const { otherUsers, updateCursor, updateSelection } = usePresence(boardId);
 
-  const [selectedWidgetId, setSelectedWidgetId] = useState<string | null>(null);
-  const [centerPosition, setCenterPosition] = useState({ x: 200, y: 150 });
-  const [draggedWidget, setDraggedWidget] = useState<{ id: string; startPosition: { x: number; y: number } } | null>(null);
-  const [showMobileWidgetStore, setShowMobileWidgetStore] = useState(false);
-  const [draggedWidgets, setDraggedWidgets] = useState<Map<string, { x: number; y: number }>>(new Map());
-  const boardRef = useRef<HTMLDivElement>(null);
+  const {
+    boardRef,
+    draggedWidgets,
+    handleDragStart,
+    handleDragMove,
+    handleDragEnd,
+    constrainPosition
+  } = useBoardDragHandling({ widgets, handleWidgetPositionChange });
 
-  // Debug logging for widgets
-  useEffect(() => {
-    console.log('Board widgets updated:', widgets.length, widgets);
-    if (widgets.length === 0) {
-      console.log('No widgets found on board');
-    } else {
-      widgets.forEach(widget => {
-        console.log(`Widget ${widget.id}: type=${widget.type}, position=(${widget.position.x}, ${widget.position.y})`);
-      });
-    }
-  }, [widgets]);
+  const {
+    selectedWidgetId,
+    centerPosition,
+    showMobileWidgetStore,
+    setSelectedWidgetId,
+    setShowMobileWidgetStore,
+    handleWidgetSelect,
+    handleBoardClick
+  } = useBoardState({ 
+    widgets, 
+    onUpdate, 
+    boardId, 
+    updateCursor, 
+    updateSelection,
+    boardRef 
+  });
 
-  // Update center position based on viewport
-  useEffect(() => {
-    const updateCenterPosition = () => {
-      if (boardRef.current) {
-        const rect = boardRef.current.getBoundingClientRect();
-        setCenterPosition({
-          x: isMobile ? rect.width / 2 : rect.width / 2,
-          y: isMobile ? rect.height / 3 : rect.height / 2,
-        });
-      }
-    };
-    
-    updateCenterPosition();
-    window.addEventListener('resize', updateCenterPosition);
-    
-    return () => {
-      window.removeEventListener('resize', updateCenterPosition);
-    };
-  }, [isMobile]);
-
-  // Notify parent component of widget changes
-  useEffect(() => {
-    if (onUpdate) {
-      onUpdate(widgets);
-    }
-  }, [widgets, onUpdate]);
-
-  // Track cursor movement for collaboration
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (boardRef.current) {
-        const rect = boardRef.current.getBoundingClientRect();
-        updateCursor(e.clientX - rect.left, e.clientY - rect.top);
-      }
-    };
-
-    if (boardRef.current && !isMobile) {
-      boardRef.current.addEventListener('mousemove', handleMouseMove);
-    }
-
-    return () => {
-      if (boardRef.current) {
-        boardRef.current.removeEventListener('mousemove', handleMouseMove);
-      }
-    };
-  }, [updateCursor, isMobile]);
-
-  // Update selection for collaboration
-  useEffect(() => {
-    updateSelection(selectedWidgetId);
-  }, [selectedWidgetId, updateSelection]);
+  const {
+    handleRotateWidget,
+    handleBringWidgetToFront,
+    handleSendWidgetToBack,
+    handleDeleteSelectedWidget
+  } = useBoardWidgetControls({
+    selectedWidgetId,
+    widgets,
+    handleUpdateWidgetSettings,
+    handleBringToFront,
+    handleSendToBack,
+    handleDeleteWidget,
+    setSelectedWidgetId
+  });
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -124,136 +91,6 @@ const Board = ({ boardId, onUpdate }: BoardProps) => {
       },
     })
   );
-
-  // Constrain position to board boundaries
-  const constrainPosition = (x: number, y: number, widgetWidth = 200, widgetHeight = 100) => {
-    if (!boardRef.current) return { x, y };
-    
-    const boardRect = boardRef.current.getBoundingClientRect();
-    const maxX = boardRect.width - widgetWidth;
-    const maxY = boardRect.height - widgetHeight;
-    
-    return {
-      x: Math.max(0, Math.min(x, maxX)),
-      y: Math.max(0, Math.min(y, maxY))
-    };
-  };
-
-  const handleDragStart = useCallback((event: DragStartEvent) => {
-    const widgetId = event.active.id as string;
-    const widget = widgets.find(w => w.id === widgetId);
-    
-    if (widget) {
-      setDraggedWidget({
-        id: widgetId,
-        startPosition: widget.position
-      });
-      setSelectedWidgetId(widgetId);
-      console.log('Drag started for widget:', widgetId, 'at position:', widget.position);
-    }
-  }, [widgets]);
-
-  const handleDragMove = useCallback((event: DragMoveEvent) => {
-    if (draggedWidget && event.delta) {
-      const newX = draggedWidget.startPosition.x + event.delta.x;
-      const newY = draggedWidget.startPosition.y + event.delta.y;
-      
-      // Get widget dimensions for better constraint calculation
-      const widget = widgets.find(w => w.id === draggedWidget.id);
-      const widgetWidth = typeof widget?.size?.width === 'string' ? 200 : (widget?.size?.width || 200);
-      const widgetHeight = typeof widget?.size?.height === 'string' ? 100 : (widget?.size?.height || 100);
-      
-      // Constrain to board boundaries
-      const constrainedPosition = constrainPosition(newX, newY, widgetWidth, widgetHeight);
-      
-      // Update temporary drag positions for smooth animation
-      setDraggedWidgets(prev => new Map(prev.set(draggedWidget.id, constrainedPosition)));
-      
-      console.log('Drag move - widget:', draggedWidget.id, 'new position:', constrainedPosition);
-    }
-  }, [draggedWidget, widgets, constrainPosition]);
-
-  const handleDragEnd = useCallback(async (event: DragEndEvent) => {
-    const { active, delta } = event;
-    const widgetId = active.id as string;
-    
-    if (!draggedWidget || !delta) {
-      setDraggedWidget(null);
-      setDraggedWidgets(new Map());
-      return;
-    }
-
-    const newX = draggedWidget.startPosition.x + delta.x;
-    const newY = draggedWidget.startPosition.y + delta.y;
-
-    // Get widget dimensions for constraint calculation
-    const widget = widgets.find(w => w.id === widgetId);
-    const widgetWidth = typeof widget?.size?.width === 'string' ? 200 : (widget?.size?.width || 200);
-    const widgetHeight = typeof widget?.size?.height === 'string' ? 100 : (widget?.size?.height || 100);
-    
-    // Constrain final position to board boundaries
-    const constrainedPosition = constrainPosition(newX, newY, widgetWidth, widgetHeight);
-
-    console.log('Drag end - widget:', widgetId, 'final position:', constrainedPosition);
-
-    try {
-      // Clear temporary drag state immediately for responsiveness
-      setDraggedWidgets(new Map());
-      setDraggedWidget(null);
-      
-      // Persist to database with constrained position
-      await handleWidgetPositionChange(widgetId, constrainedPosition.x, constrainedPosition.y);
-      console.log('Widget position updated successfully to:', constrainedPosition);
-    } catch (error) {
-      console.error('Failed to update widget position:', error);
-      // Revert on error by refreshing
-      setDraggedWidgets(new Map());
-    }
-  }, [draggedWidget, handleWidgetPositionChange, widgets, constrainPosition]);
-
-  const handleBoardClick = (e: React.MouseEvent) => {
-    // Only deselect if clicking on the board itself, not on widgets
-    if (e.target === e.currentTarget) {
-      setSelectedWidgetId(null);
-    }
-  };
-
-  const handleWidgetSelect = (widgetId: string) => {
-    setSelectedWidgetId(widgetId);
-  };
-
-  const handleRotateWidget = () => {
-    if (selectedWidgetId) {
-      const widget = widgets.find(w => w.id === selectedWidgetId);
-      if (widget) {
-        const currentRotation = widget.rotation || 0;
-        const newRotation = (currentRotation + 15) % 360;
-        handleUpdateWidgetSettings(selectedWidgetId, { 
-          ...widget.settings,
-          rotation: newRotation 
-        });
-      }
-    }
-  };
-
-  const handleBringWidgetToFront = () => {
-    if (selectedWidgetId) {
-      handleBringToFront(selectedWidgetId);
-    }
-  };
-
-  const handleSendWidgetToBack = () => {
-    if (selectedWidgetId) {
-      handleSendToBack(selectedWidgetId);
-    }
-  };
-
-  const handleDeleteSelectedWidget = () => {
-    if (selectedWidgetId) {
-      handleDeleteWidget(selectedWidgetId);
-      setSelectedWidgetId(null);
-    }
-  };
 
   const handleWidgetAdded = useCallback((widget: Widget) => {
     console.log('Widget being added to board:', widget);
@@ -273,7 +110,7 @@ const Board = ({ boardId, onUpdate }: BoardProps) => {
     
     handleAddWidget(constrainedWidget);
     setShowMobileWidgetStore(false);
-  }, [handleAddWidget, constrainPosition]);
+  }, [handleAddWidget, constrainPosition, setShowMobileWidgetStore]);
 
   if (loading) {
     return (
@@ -295,12 +132,7 @@ const Board = ({ boardId, onUpdate }: BoardProps) => {
       onClick={handleBoardClick}
       ref={boardRef}
     >
-      {widgets.length === 0 && (
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-gray-500 text-center z-10">
-          <p className="text-lg mb-2">No widgets on this board yet</p>
-          <p className="text-sm">Click the + button to add your first widget</p>
-        </div>
-      )}
+      {widgets.length === 0 && <EmptyBoardState />}
 
       <VirtualizedBoard
         widgets={widgets}
@@ -329,26 +161,13 @@ const Board = ({ boardId, onUpdate }: BoardProps) => {
 
       {/* Widget Store */}
       {isMobile ? (
-        <Drawer open={showMobileWidgetStore} onOpenChange={setShowMobileWidgetStore}>
-          <DrawerTrigger asChild>
-            <button className="fixed bottom-4 right-4 w-16 h-16 bg-garden-primary text-white rounded-full shadow-xl flex items-center justify-center z-40 active:scale-95 transition-transform">
-              <Plus className="w-7 h-7" />
-            </button>
-          </DrawerTrigger>
-          <DrawerContent className="max-h-[85vh]">
-            <DrawerHeader>
-              <DrawerTitle>Add Widget</DrawerTitle>
-            </DrawerHeader>
-            <div className="p-4 pb-8 overflow-y-auto">
-              <WidgetStore 
-                onAddWidget={handleWidgetAdded} 
-                centerPosition={centerPosition} 
-                boardId={boardId}
-                isMobile={true}
-              />
-            </div>
-          </DrawerContent>
-        </Drawer>
+        <MobileWidgetStore
+          showMobileWidgetStore={showMobileWidgetStore}
+          setShowMobileWidgetStore={setShowMobileWidgetStore}
+          onAddWidget={handleWidgetAdded}
+          centerPosition={centerPosition}
+          boardId={boardId}
+        />
       ) : (
         <WidgetStore 
           onAddWidget={handleWidgetAdded} 
