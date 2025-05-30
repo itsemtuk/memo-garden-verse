@@ -5,6 +5,7 @@ import { Widget } from "@/types";
 import { DndContext, DragEndEvent, DragStartEvent, DragMoveEvent, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useBoardData } from "@/hooks/useBoardData";
+import { Trash2, MoveUp, MoveDown } from "lucide-react";
 
 interface BoardProps {
   boardId: string;
@@ -21,12 +22,12 @@ const Board = ({ boardId, onUpdate }: BoardProps) => {
     handleUpdateWidgetSettings,
     handleBringToFront,
     handleSendToBack,
+    handleDeleteWidget,
   } = useBoardData(boardId);
 
   const [selectedWidgetId, setSelectedWidgetId] = useState<string | null>(null);
   const [centerPosition, setCenterPosition] = useState({ x: 400, y: 300 });
   const [draggedWidget, setDraggedWidget] = useState<{ id: string; startPosition: { x: number; y: number } } | null>(null);
-  const [tempPosition, setTempPosition] = useState<{ x: number; y: number } | null>(null);
   const boardRef = useRef<HTMLDivElement>(null);
 
   // Update center position based on viewport
@@ -78,12 +79,18 @@ const Board = ({ boardId, onUpdate }: BoardProps) => {
   }, [widgets]);
 
   const handleDragMove = useCallback((event: DragMoveEvent) => {
+    // Real-time position update during drag for smooth experience
     if (draggedWidget) {
       const newX = draggedWidget.startPosition.x + event.delta.x;
       const newY = draggedWidget.startPosition.y + event.delta.y;
-      setTempPosition({ x: newX, y: newY });
+      
+      // Update widget position in real-time during drag
+      const widget = widgets.find(w => w.id === draggedWidget.id);
+      if (widget) {
+        widget.position = { x: newX, y: newY };
+      }
     }
-  }, [draggedWidget]);
+  }, [draggedWidget, widgets]);
 
   const handleDragEnd = useCallback(async (event: DragEndEvent) => {
     const { active, delta } = event;
@@ -103,7 +110,6 @@ const Board = ({ boardId, onUpdate }: BoardProps) => {
       console.error('Failed to update widget position:', error);
     } finally {
       setDraggedWidget(null);
-      setTempPosition(null);
     }
   }, [draggedWidget, handleWidgetPositionChange]);
 
@@ -124,6 +130,13 @@ const Board = ({ boardId, onUpdate }: BoardProps) => {
   const handleSendWidgetToBack = () => {
     if (selectedWidgetId) {
       handleSendToBack(selectedWidgetId);
+    }
+  };
+
+  const handleDeleteSelectedWidget = () => {
+    if (selectedWidgetId) {
+      handleDeleteWidget(selectedWidgetId);
+      setSelectedWidgetId(null);
     }
   };
 
@@ -151,17 +164,10 @@ const Board = ({ boardId, onUpdate }: BoardProps) => {
         onDragEnd={handleDragEnd}
       >
         {sortedWidgets.map((widget) => {
-          // Use temp position during drag if this widget is being dragged
-          const isBeingDragged = draggedWidget?.id === widget.id;
-          const displayPosition = isBeingDragged && tempPosition ? tempPosition : widget.position;
-          
           return (
             <WidgetRenderer
               key={`${widget.id}-${widget.updatedAt?.getTime() || Date.now()}`}
-              widget={{
-                ...widget,
-                position: displayPosition
-              }}
+              widget={widget}
               isSelected={selectedWidgetId === widget.id}
               onClick={() => handleWidgetSelect(widget.id)}
               onUpdate={(content) => handleUpdateWidget(widget.id, content)}
@@ -171,20 +177,29 @@ const Board = ({ boardId, onUpdate }: BoardProps) => {
         })}
       </DndContext>
 
-      {/* Layer controls for selected widget */}
+      {/* Layer and delete controls for selected widget - positioned on left side */}
       {selectedWidgetId && (
-        <div className="fixed bottom-4 right-4 flex flex-col gap-2 bg-white p-2 rounded-lg shadow-lg border">
+        <div className="fixed left-4 top-1/2 transform -translate-y-1/2 flex flex-col gap-2 bg-white p-2 rounded-lg shadow-lg border z-50">
           <button
             onClick={handleBringWidgetToFront}
-            className="px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
+            className="px-3 py-2 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center gap-1"
+            title="Bring to Front"
           >
-            Bring to Front
+            <MoveUp className="w-3 h-3" />
           </button>
           <button
             onClick={handleSendWidgetToBack}
-            className="px-3 py-1 text-xs bg-gray-500 text-white rounded hover:bg-gray-600"
+            className="px-3 py-2 text-xs bg-gray-500 text-white rounded hover:bg-gray-600 flex items-center gap-1"
+            title="Send to Back"
           >
-            Send to Back
+            <MoveDown className="w-3 h-3" />
+          </button>
+          <button
+            onClick={handleDeleteSelectedWidget}
+            className="px-3 py-2 text-xs bg-red-500 text-white rounded hover:bg-red-600 flex items-center gap-1"
+            title="Delete Widget"
+          >
+            <Trash2 className="w-3 h-3" />
           </button>
         </div>
       )}

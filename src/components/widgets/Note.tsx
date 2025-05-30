@@ -18,6 +18,7 @@ const Note = ({ widget, isSelected, onClick, onUpdate }: NoteProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [noteContent, setNoteContent] = useState(widget.content);
   const [validationError, setValidationError] = useState<string>("");
+  const [hasChanges, setHasChanges] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
@@ -30,6 +31,12 @@ const Note = ({ widget, isSelected, onClick, onUpdate }: NoteProps) => {
     rotate: `${widget.rotation || 0}deg`,
     zIndex: isDragging ? 1000 : (widget.settings?.zIndex || 1),
   };
+
+  // Update local content when widget content changes
+  useEffect(() => {
+    setNoteContent(widget.content);
+    setHasChanges(false);
+  }, [widget.content]);
 
   // Auto-focus textarea when editing starts
   useEffect(() => {
@@ -51,11 +58,17 @@ const Note = ({ widget, isSelected, onClick, onUpdate }: NoteProps) => {
     setValidationError("");
   };
 
-  const handleBlur = () => {
+  const saveNote = () => {
+    if (!hasChanges) {
+      setIsEditing(false);
+      return;
+    }
+
     try {
       const validatedContent = noteContentSchema.parse(noteContent);
       setIsEditing(false);
       setValidationError("");
+      setHasChanges(false);
       onUpdate(validatedContent);
     } catch (error) {
       const errorMessage = handleValidationError(error);
@@ -64,14 +77,28 @@ const Note = ({ widget, isSelected, onClick, onUpdate }: NoteProps) => {
     }
   };
 
+  const handleBlur = () => {
+    // Auto-save when clicking away from the note
+    saveNote();
+  };
+
+  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newContent = e.target.value;
+    setNoteContent(newContent);
+    setHasChanges(newContent !== widget.content);
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Escape') {
+      // Cancel editing and revert changes
       setNoteContent(widget.content);
       setIsEditing(false);
       setValidationError("");
+      setHasChanges(false);
     }
     if (e.key === 'Enter' && e.ctrlKey) {
-      handleBlur();
+      // Save with Ctrl+Enter
+      saveNote();
     }
   };
 
@@ -103,36 +130,48 @@ const Note = ({ widget, isSelected, onClick, onUpdate }: NoteProps) => {
       {isSelected && !isEditing && (
         <button
           onClick={handleEditClick}
-          className="absolute -top-2 -right-2 w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-blue-600 transition-colors"
+          className="absolute -top-2 -right-2 w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-blue-600 transition-colors z-10"
           title="Edit note"
         >
           <Edit3 className="w-3 h-3" />
         </button>
       )}
       
+      {/* Changes indicator */}
+      {isEditing && hasChanges && (
+        <div className="absolute -top-1 -left-1 w-3 h-3 bg-orange-500 rounded-full animate-pulse" title="Unsaved changes"></div>
+      )}
+      
       {isEditing ? (
         <div className="relative">
           <textarea
             ref={textareaRef}
-            className="w-full h-full bg-transparent border-none focus:outline-none resize-none min-h-[100px]"
+            className="w-full h-full bg-transparent border-none focus:outline-none resize-none min-h-[100px] p-2"
             value={noteContent}
-            onChange={(e) => setNoteContent(e.target.value)}
+            onChange={handleContentChange}
             onBlur={handleBlur}
             onKeyDown={handleKeyDown}
             onClick={(e) => e.stopPropagation()}
             placeholder="Type your note here..."
           />
           {validationError && (
-            <div className="absolute -bottom-6 left-0 text-xs text-red-600 bg-white px-2 py-1 rounded shadow-lg z-50">
+            <div className="absolute -bottom-8 left-0 text-xs text-red-600 bg-white px-2 py-1 rounded shadow-lg z-50 border">
               {validationError}
             </div>
           )}
-          <div className="absolute -bottom-6 right-0 text-xs text-gray-500 bg-white px-2 py-1 rounded shadow-sm">
-            Ctrl+Enter to save, Esc to cancel
+          <div className="absolute -bottom-8 right-0 text-xs text-gray-500 bg-white px-2 py-1 rounded shadow-sm border">
+            {hasChanges ? 'Click away to save' : 'Ctrl+Enter to save, Esc to cancel'}
           </div>
         </div>
       ) : (
-        <p className="min-h-[100px] break-words font-handwriting p-2">{widget.content || "Click to edit..."}</p>
+        <div 
+          className="min-h-[100px] break-words font-handwriting p-2 cursor-text hover:bg-yellow-50 transition-colors"
+          onClick={handleEditClick}
+        >
+          {widget.content || (
+            <span className="text-gray-400 italic">Double-click to edit...</span>
+          )}
+        </div>
       )}
     </div>
   );

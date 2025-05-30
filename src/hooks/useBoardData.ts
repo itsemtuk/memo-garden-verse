@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect } from 'react';
 import { Widget } from '@/types';
 import { CreateWidgetData } from '@/types/widget';
@@ -230,6 +229,26 @@ export const useBoardData = (boardId: string) => {
     }
   }, [notesAsWidgets, updateNotePosition]);
 
+  const handleDeleteWidget = useCallback(async (widgetId: string) => {
+    try {
+      // Check if it's a note widget (from database)
+      const isNote = notesAsWidgets.some(w => w.id === widgetId);
+      
+      if (isNote) {
+        await deleteNote(widgetId);
+        toast.success('Widget deleted successfully');
+      } else {
+        // Handle local widgets
+        setImageWidgets(prev => prev.filter(widget => widget.id !== widgetId));
+        toast.success('Widget deleted successfully');
+      }
+    } catch (error) {
+      console.error('Failed to delete widget:', error);
+      const friendlyError = createUserFriendlyError('Failed to delete widget. Please try again.');
+      toast.error(friendlyError.message);
+    }
+  }, [notesAsWidgets, deleteNote]);
+
   const handleBringToFront = useCallback(async (widgetId: string) => {
     const newZIndex = getMaxZIndex() + 1;
     await handleUpdateWidgetSettings(widgetId, { 
@@ -253,5 +272,6 @@ export const useBoardData = (boardId: string) => {
     handleWidgetPositionChange,
     handleBringToFront,
     handleSendToBack,
+    handleDeleteWidget,
   };
 };
