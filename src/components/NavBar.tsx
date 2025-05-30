@@ -1,21 +1,23 @@
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  NavigationMenu,
-  NavigationMenuContent,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  NavigationMenuTrigger,
-} from "@/components/ui/navigation-menu";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Search } from "lucide-react";
-import { Board } from "@/types";
 import { useState } from "react";
-import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Board } from "@/types";
+import { ChevronDown, Plus, LogOut } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
-import UserProfile from "@/components/UserProfile";
 
 interface NavBarProps {
   currentBoard: Board;
@@ -25,125 +27,97 @@ interface NavBarProps {
 }
 
 const NavBar = ({ currentBoard, availableBoards, onBoardChange, onCreateBoard }: NavBarProps) => {
-  const [searchQuery, setSearchQuery] = useState("");
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [newBoardName, setNewBoardName] = useState("");
-  const { user } = useAuth();
+  const { user, profile, signOut } = useAuth();
 
   const handleCreateBoard = () => {
     if (newBoardName.trim()) {
-      onCreateBoard(newBoardName);
+      onCreateBoard(newBoardName.trim());
       setNewBoardName("");
+      setIsCreateDialogOpen(false);
+    }
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Error signing out:', error);
     }
   };
 
   return (
-    <div className="bg-white border-b py-3 px-6 flex items-center justify-between shadow-sm">
-      <div className="flex items-center gap-2">
-        <h1 className="text-2xl font-semibold text-garden-text">
-          <span className="text-garden-primary">Memo</span>Garden
-        </h1>
-        
-        <NavigationMenu>
-          <NavigationMenuList>
-            <NavigationMenuItem>
-              <NavigationMenuTrigger className="bg-transparent hover:bg-gray-100">
-                My Boards
-              </NavigationMenuTrigger>
-              <NavigationMenuContent>
-                <ul className="grid gap-3 p-4 w-[320px]">
-                  {availableBoards.map((board) => (
-                    <li key={board.id}>
-                      <NavigationMenuLink asChild>
-                        <Button
-                          variant="ghost"
-                          className={cn(
-                            "w-full justify-start text-left",
-                            board.id === currentBoard.id && "bg-garden-secondary/10"
-                          )}
-                          onClick={() => onBoardChange(board.id)}
-                        >
-                          {board.name}
-                          <span className="ml-2 text-xs opacity-70">
-                            {board.is_public ? "(Public)" : "(Private)"}
-                          </span>
-                        </Button>
-                      </NavigationMenuLink>
-                    </li>
-                  ))}
-                  <li className="mt-2 pt-2 border-t">
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button variant="outline" className="w-full">
-                          + Create New Board
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-80 p-4">
-                        <div className="space-y-2">
-                          <h3 className="font-medium">Create a new board</h3>
-                          <Input
-                            placeholder="Board name"
-                            value={newBoardName}
-                            onChange={(e) => setNewBoardName(e.target.value)}
-                          />
-                          <div className="flex justify-end">
-                            <Button onClick={handleCreateBoard} disabled={!newBoardName.trim()}>
-                              Create
-                            </Button>
-                          </div>
-                        </div>
-                      </PopoverContent>
-                    </Popover>
-                  </li>
-                </ul>
-              </NavigationMenuContent>
-            </NavigationMenuItem>
-            
-            <NavigationMenuItem>
-              <NavigationMenuTrigger className="bg-transparent hover:bg-gray-100">
-                Garden
-              </NavigationMenuTrigger>
-              <NavigationMenuContent>
-                <div className="grid gap-3 p-4 w-[320px]">
-                  <div className="text-sm">
-                    Browse public boards and collections
-                  </div>
-                  <NavigationMenuLink asChild>
-                    <Button variant="ghost" className="w-full justify-start">
-                      Explore Public Boards
-                    </Button>
-                  </NavigationMenuLink>
-                  <NavigationMenuLink asChild>
-                    <Button variant="ghost" className="w-full justify-start">
-                      Popular Collections
-                    </Button>
-                  </NavigationMenuLink>
+    <nav className="border-b bg-white shadow-sm">
+      <div className="flex items-center justify-between px-6 py-3">
+        <div className="flex items-center space-x-4">
+          <h1 className="text-xl font-bold text-garden-primary">MemoGarden</h1>
+          
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="flex items-center space-x-2">
+                <span>{currentBoard.name}</span>
+                <ChevronDown className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              {availableBoards.map((board) => (
+                <DropdownMenuItem
+                  key={board.id}
+                  onClick={() => onBoardChange(board.id)}
+                  className={currentBoard.id === board.id ? "bg-garden-accent" : ""}
+                >
+                  {board.name}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Plus className="h-4 w-4 mr-2" />
+                New Board
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Create New Board</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <Input
+                  placeholder="Board name"
+                  value={newBoardName}
+                  onChange={(e) => setNewBoardName(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleCreateBoard()}
+                />
+                <div className="flex justify-end space-x-2">
+                  <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleCreateBoard} disabled={!newBoardName.trim()}>
+                    Create
+                  </Button>
                 </div>
-              </NavigationMenuContent>
-            </NavigationMenuItem>
-          </NavigationMenuList>
-        </NavigationMenu>
-      </div>
-      
-      <div className="flex items-center gap-4">
-        <div className="relative max-w-[300px]">
-          <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-          <Input
-            placeholder="Search boards and content..."
-            className="pl-8 pr-4"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
-        
-        {user ? (
-          <UserProfile />
-        ) : (
-          <Button className="bg-garden-primary hover:bg-garden-secondary text-white">
-            Sign In
-          </Button>
-        )}
+
+        <div className="flex items-center space-x-4">
+          {user && (
+            <div className="flex items-center space-x-2">
+              <span className="text-sm text-gray-600">
+                {profile?.username || user.email}
+              </span>
+              <Button variant="ghost" size="sm" onClick={handleSignOut}>
+                <LogOut className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </nav>
   );
 };
 
