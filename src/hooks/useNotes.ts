@@ -54,11 +54,11 @@ export const useNotes = (boardId: string) => {
         .insert({
           board_id: boardId,
           content: widgetData.content,
-          x: Math.round(widgetData.x), // Ensure integer
-          y: Math.round(widgetData.y), // Ensure integer
+          x: Math.round(widgetData.x),
+          y: Math.round(widgetData.y),
           widget_type: widgetData.type,
           widget_settings: widgetData.settings || {},
-          rotation: Math.floor(Math.random() * 6) - 3, // Random rotation between -3 and 3
+          rotation: Math.floor(Math.random() * 6) - 3,
         })
         .select()
         .single();
@@ -66,7 +66,6 @@ export const useNotes = (boardId: string) => {
       if (error) throw error;
       console.log('Widget created in database:', data);
       
-      // Immediately add to local state for instant feedback
       setNotes(prev => [...prev, data]);
       
       return data;
@@ -81,8 +80,8 @@ export const useNotes = (boardId: string) => {
     return createWidget({
       type: 'note',
       content,
-      x: Math.round(x), // Ensure integer
-      y: Math.round(y), // Ensure integer
+      x: Math.round(x),
+      y: Math.round(y),
     });
   }, [createWidget]);
 
@@ -92,30 +91,39 @@ export const useNotes = (boardId: string) => {
       const roundedX = Math.round(x);
       const roundedY = Math.round(y);
       
-      console.log('Updating note position:', noteId, 'to', { roundedX, roundedY });
+      console.log('=== DATABASE UPDATE ===');
+      console.log('Note ID:', noteId);
+      console.log('New position:', { x: roundedX, y: roundedY });
       
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('notes')
         .update({ 
           x: roundedX, 
           y: roundedY, 
           updated_at: new Date().toISOString() 
         })
-        .eq('id', noteId);
+        .eq('id', noteId)
+        .select();
 
       if (error) {
         console.error('Database error updating position:', error);
         throw error;
       }
 
+      console.log('Database update response:', data);
+
       // Optimistically update local state
-      setNotes(prev => prev.map(note => 
-        note.id === noteId 
-          ? { ...note, x: roundedX, y: roundedY, updated_at: new Date().toISOString() }
-          : note
-      ));
+      setNotes(prev => {
+        const updated = prev.map(note => 
+          note.id === noteId 
+            ? { ...note, x: roundedX, y: roundedY, updated_at: new Date().toISOString() }
+            : note
+        );
+        console.log('Local state updated:', updated.find(n => n.id === noteId));
+        return updated;
+      });
       
-      console.log('Position updated successfully');
+      console.log('Position updated successfully in database and local state');
     } catch (err) {
       console.error('Error updating note position:', err);
       throw err;
@@ -132,7 +140,6 @@ export const useNotes = (boardId: string) => {
 
       if (error) throw error;
       
-      // Optimistically update local state
       setNotes(prev => prev.map(note => 
         note.id === noteId 
           ? { ...note, content, updated_at: new Date().toISOString() }
@@ -157,7 +164,6 @@ export const useNotes = (boardId: string) => {
 
       if (error) throw error;
       
-      // Optimistically update local state
       setNotes(prev => prev.map(note => 
         note.id === widgetId 
           ? { ...note, widget_settings: settings, updated_at: new Date().toISOString() }
@@ -174,7 +180,6 @@ export const useNotes = (boardId: string) => {
     try {
       console.log('Deleting note:', noteId);
       
-      // Optimistically remove from local state first for immediate UI feedback
       setNotes(prev => {
         const filtered = prev.filter(note => note.id !== noteId);
         console.log('Optimistically removed note, remaining notes:', filtered.length);
@@ -188,7 +193,6 @@ export const useNotes = (boardId: string) => {
 
       if (error) {
         console.error('Database error deleting note:', error);
-        // Revert optimistic update on error
         fetchNotes();
         throw error;
       }
@@ -229,7 +233,8 @@ export const useNotes = (boardId: string) => {
             break;
           case 'UPDATE':
             setNotes(prev => {
-              console.log('Updating note in state:', payload.new.id);
+              console.log('Real-time update for note:', payload.new.id);
+              console.log('New data:', payload.new);
               return prev.map(note => 
                 note.id === payload.new.id ? payload.new as Note : note
               );
@@ -258,7 +263,7 @@ export const useNotes = (boardId: string) => {
   // Convert notes to widgets format for compatibility with existing Board component
   const notesAsWidgets: Widget[] = notes.map(note => ({
     id: note.id,
-    type: note.widget_type as Widget['type'], // Use the full Widget type union
+    type: note.widget_type as Widget['type'],
     content: note.content,
     position: { x: note.x, y: note.y },
     rotation: note.rotation,
