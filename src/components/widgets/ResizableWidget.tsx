@@ -2,30 +2,24 @@
 import React, { useState, useCallback } from 'react';
 import { Rnd } from 'react-rnd';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { Widget } from '@/types';
 
 interface ResizableWidgetProps {
-  children: React.ReactNode;
-  position: { x: number; y: number };
-  size: { width: number | string; height: number | string };
-  rotation?: number;
-  zIndex?: number;
+  widget: Widget;
   isSelected: boolean;
-  onPositionChange: (x: number, y: number) => void;
-  onSizeChange: (width: number, height: number) => void;
-  onRotationChange?: (rotation: number) => void;
-  className?: string;
+  onSelect: (widgetId: string) => void;
+  onUpdateContent: (widgetId: string, content: string) => void;
+  onUpdateSettings?: (widgetId: string, settings: any) => void;
+  readonly?: boolean;
 }
 
 const ResizableWidget: React.FC<ResizableWidgetProps> = ({
-  children,
-  position,
-  size,
-  rotation = 0,
-  zIndex = 1,
+  widget,
   isSelected,
-  onPositionChange,
-  onSizeChange,
-  className = '',
+  onSelect,
+  onUpdateContent,
+  onUpdateSettings,
+  readonly = false,
 }) => {
   const isMobile = useIsMobile();
   const [isDragging, setIsDragging] = useState(false);
@@ -36,8 +30,13 @@ const ResizableWidget: React.FC<ResizableWidgetProps> = ({
 
   const handleDragStop = useCallback((e: any, data: any) => {
     setIsDragging(false);
-    onPositionChange(data.x, data.y);
-  }, [onPositionChange]);
+    if (onUpdateSettings) {
+      onUpdateSettings(widget.id, {
+        ...widget.settings,
+        position: { x: data.x, y: data.y }
+      });
+    }
+  }, [widget.id, widget.settings, onUpdateSettings]);
 
   const handleResizeStop = useCallback((
     e: any,
@@ -48,24 +47,40 @@ const ResizableWidget: React.FC<ResizableWidgetProps> = ({
   ) => {
     const newWidth = parseInt(ref.style.width, 10);
     const newHeight = parseInt(ref.style.height, 10);
-    onSizeChange(newWidth, newHeight);
-    onPositionChange(position.x, position.y);
-  }, [onSizeChange, onPositionChange]);
+    if (onUpdateSettings) {
+      onUpdateSettings(widget.id, {
+        ...widget.settings,
+        size: { width: newWidth, height: newHeight },
+        position: { x: position.x, y: position.y }
+      });
+    }
+  }, [widget.id, widget.settings, onUpdateSettings]);
 
   const normalizedSize = {
-    width: typeof size.width === 'string' ? parseInt(size.width.replace('px', ''), 10) : size.width,
-    height: typeof size.height === 'string' ? parseInt(size.height.replace('px', ''), 10) : size.height,
+    width: typeof widget.size?.width === 'string' ? 
+      parseInt(widget.size.width.replace('px', ''), 10) : 
+      (widget.size?.width || 200),
+    height: typeof widget.size?.height === 'string' ? 
+      parseInt(widget.size.height.replace('px', ''), 10) : 
+      (widget.size?.height || 150),
   };
+
+  const handleClick = useCallback(() => {
+    if (!readonly) {
+      onSelect(widget.id);
+    }
+  }, [widget.id, onSelect, readonly]);
 
   return (
     <Rnd
       size={normalizedSize}
-      position={position}
+      position={widget.position}
       onDragStart={handleDragStart}
-      onDragStop={handleDragStop}
-      onResizeStop={handleResizeStop}
+      onDragStop={readonly ? undefined : handleDragStop}
+      onResizeStop={readonly ? undefined : handleResizeStop}
       dragHandleClassName="widget-drag-handle"
-      enableResizing={!isMobile && isSelected ? {
+      disableDragging={readonly}
+      enableResizing={!isMobile && isSelected && !readonly ? {
         top: true,
         right: true,
         bottom: true,
@@ -79,15 +94,15 @@ const ResizableWidget: React.FC<ResizableWidgetProps> = ({
       minHeight={isMobile ? 80 : 60}
       maxWidth={isMobile ? window.innerWidth - 40 : 800}
       maxHeight={isMobile ? window.innerHeight - 200 : 600}
-      className={`${className} ${isDragging ? 'dragging' : ''} ${isSelected ? 'selected' : ''}`}
+      className={`${isDragging ? 'dragging' : ''} ${isSelected ? 'selected' : ''}`}
       style={{
-        transform: `rotate(${rotation}deg)`,
-        zIndex,
+        transform: `rotate(${widget.rotation || 0}deg)`,
+        zIndex: widget.settings?.zIndex || 1,
         touchAction: isMobile ? 'none' : 'auto',
       }}
       bounds="parent"
       dragAxis={isMobile ? 'both' : 'both'}
-      resizeHandleStyles={!isMobile && isSelected ? {
+      resizeHandleStyles={!isMobile && isSelected && !readonly ? {
         bottomRight: {
           bottom: '-5px',
           right: '-5px',
@@ -129,10 +144,36 @@ const ResizableWidget: React.FC<ResizableWidgetProps> = ({
           cursor: 'nw-resize',
         },
       } : {}}
+      onClick={handleClick}
     >
       <div className="w-full h-full widget-drag-handle">
-        {children}
-        {isSelected && (
+        <div className="p-2 h-full overflow-hidden">
+          {widget.type === 'note' && (
+            <div className="bg-yellow-100 p-2 rounded h-full">
+              <textarea 
+                value={widget.content}
+                onChange={(e) => !readonly && onUpdateContent(widget.id, e.target.value)}
+                className="w-full h-full bg-transparent border-none resize-none outline-none"
+                placeholder="Add your note..."
+                readOnly={readonly}
+              />
+            </div>
+          )}
+          {widget.type === 'image' && (
+            <div className="h-full flex items-center justify-center bg-gray-100 rounded">
+              {widget.content ? (
+                <img 
+                  src={widget.content} 
+                  alt="Widget content" 
+                  className="max-w-full max-h-full object-contain"
+                />
+              ) : (
+                <span className="text-gray-500">No image</span>
+              )}
+            </div>
+          )}
+        </div>
+        {isSelected && !readonly && (
           <div className="absolute inset-0 border-2 border-blue-500 rounded-md pointer-events-none" />
         )}
       </div>

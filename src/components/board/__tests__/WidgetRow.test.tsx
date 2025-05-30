@@ -6,6 +6,7 @@ import WidgetRow from '../WidgetRow';
 describe('WidgetRow', () => {
   it('renders without crashing', () => {
     const mockWidgets = [];
+    const mockDraggedWidgets = new Map();
     const mockProps = {
       widgets: mockWidgets,
       rowHeight: 300,
@@ -13,6 +14,7 @@ describe('WidgetRow', () => {
       onWidgetSelect: jest.fn(),
       onUpdateWidget: jest.fn(),
       onUpdateWidgetSettings: jest.fn(),
+      draggedWidgets: mockDraggedWidgets,
     };
     render(<WidgetRow {...mockProps} />);
   });
