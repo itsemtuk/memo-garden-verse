@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect } from 'react';
 import { Widget } from '@/types';
 import { CreateWidgetData } from '@/types/widget';
@@ -42,9 +41,12 @@ export const useBoardData = (boardId: string) => {
       return;
     }
 
+    // Round position values to integers
+    const roundedX = Math.round(widget.position.x);
+    const roundedY = Math.round(widget.position.y);
+
     // Validate position bounds (prevent widgets from being placed too far off-screen)
-    if (widget.position.x < -1000 || widget.position.x > 10000 || 
-        widget.position.y < -1000 || widget.position.y > 10000) {
+    if (roundedX < -1000 || roundedX > 10000 || roundedY < -1000 || roundedY > 10000) {
       const error = createUserFriendlyError('Widget position is invalid. Please try again.');
       toast.error(error.message);
       return;
@@ -55,7 +57,7 @@ export const useBoardData = (boardId: string) => {
         console.log('Creating note widget');
         // Validate and sanitize content
         const sanitizedContent = validateAndSanitizeContent(widget.content);
-        await createNote(sanitizedContent, widget.position.x, widget.position.y);
+        await createNote(sanitizedContent, roundedX, roundedY);
       } catch (error) {
         console.error('Failed to create note:', error);
         const friendlyError = createUserFriendlyError('Failed to create note. Please try again.');
@@ -81,8 +83,8 @@ export const useBoardData = (boardId: string) => {
         await createWidget({
           type: widget.type as 'note' | 'image',
           content: sanitizedContent,
-          x: widget.position.x,
-          y: widget.position.y,
+          x: roundedX,
+          y: roundedY,
           settings: { 
             size: sizeSettings,
             ...widget.settings
@@ -178,8 +180,12 @@ export const useBoardData = (boardId: string) => {
   }, [notesAsWidgets, updateWidgetSettings]);
 
   const handleWidgetPositionChange = useCallback(async (widgetId: string, x: number, y: number) => {
+    // Round position values to integers for database storage
+    const roundedX = Math.round(x);
+    const roundedY = Math.round(y);
+
     // Validate position bounds
-    if (x < -1000 || x > 10000 || y < -1000 || y > 10000) {
+    if (roundedX < -1000 || roundedX > 10000 || roundedY < -1000 || roundedY > 10000) {
       const error = createUserFriendlyError('Widget position is out of bounds.');
       toast.error(error.message);
       return;
@@ -190,7 +196,7 @@ export const useBoardData = (boardId: string) => {
     
     if (isNote) {
       try {
-        await updateNotePosition(widgetId, x, y);
+        await updateNotePosition(widgetId, roundedX, roundedY);
       } catch (error) {
         console.error('Failed to update note position:', error);
         const friendlyError = createUserFriendlyError('Failed to move note. Please try again.');
@@ -200,7 +206,7 @@ export const useBoardData = (boardId: string) => {
       // Handle image widgets locally
       setImageWidgets(prev => prev.map(widget =>
         widget.id === widgetId
-          ? { ...widget, position: { x, y }, updatedAt: new Date() }
+          ? { ...widget, position: { x: roundedX, y: roundedY }, updatedAt: new Date() }
           : widget
       ));
     }
