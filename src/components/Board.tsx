@@ -2,7 +2,7 @@
 import { WidgetRenderer } from "@/components/widgets/WidgetRegistry";
 import WidgetStore from "@/components/WidgetStore";
 import { Widget } from "@/types";
-import { DndContext, DragEndEvent, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
+import { DndContext, DragEndEvent, DragStartEvent, DragMoveEvent, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useBoardData } from "@/hooks/useBoardData";
 
@@ -19,10 +19,14 @@ const Board = ({ boardId, onUpdate }: BoardProps) => {
     handleUpdateWidget,
     handleWidgetPositionChange,
     handleUpdateWidgetSettings,
+    handleBringToFront,
+    handleSendToBack,
   } = useBoardData(boardId);
 
   const [selectedWidgetId, setSelectedWidgetId] = useState<string | null>(null);
   const [centerPosition, setCenterPosition] = useState({ x: 400, y: 300 });
+  const [draggedWidget, setDraggedWidget] = useState<{ id: string; startPosition: { x: number; y: number } } | null>(null);
+  const [tempPosition, setTempPosition] = useState<{ x: number; y: number } | null>(null);
   const boardRef = useRef<HTMLDivElement>(null);
 
   // Update center position based on viewport
@@ -52,44 +56,75 @@ const Board = ({ boardId, onUpdate }: BoardProps) => {
     }
   }, [widgets, onUpdate]);
 
-  // Log widget changes for debugging
-  useEffect(() => {
-    console.log('Board widgets updated - count:', widgets.length, 'widgets:', widgets.map(w => ({ id: w.id, type: w.type, position: w.position })));
-  }, [widgets]);
-
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 5,
+        distance: 3,
       },
     })
   );
+
+  const handleDragStart = useCallback((event: DragStartEvent) => {
+    const widgetId = event.active.id as string;
+    const widget = widgets.find(w => w.id === widgetId);
+    
+    if (widget) {
+      setDraggedWidget({
+        id: widgetId,
+        startPosition: widget.position
+      });
+      console.log('Drag started for widget:', widgetId);
+    }
+  }, [widgets]);
+
+  const handleDragMove = useCallback((event: DragMoveEvent) => {
+    if (draggedWidget) {
+      const newX = draggedWidget.startPosition.x + event.delta.x;
+      const newY = draggedWidget.startPosition.y + event.delta.y;
+      setTempPosition({ x: newX, y: newY });
+    }
+  }, [draggedWidget]);
 
   const handleDragEnd = useCallback(async (event: DragEndEvent) => {
     const { active, delta } = event;
     const widgetId = active.id as string;
     
-    const widget = widgets.find(w => w.id === widgetId);
-    if (!widget) {
-      console.warn('Widget not found for drag end:', widgetId);
-      return;
-    }
+    if (!draggedWidget) return;
 
-    const newX = widget.position.x + delta.x;
-    const newY = widget.position.y + delta.y;
+    const newX = draggedWidget.startPosition.x + delta.x;
+    const newY = draggedWidget.startPosition.y + delta.y;
 
-    console.log('Drag end - widget:', widgetId, 'current position:', widget.position, 'delta:', delta, 'new position:', { newX, newY });
+    console.log('Drag end - widget:', widgetId, 'new position:', { newX, newY });
 
     try {
       await handleWidgetPositionChange(widgetId, newX, newY);
       console.log('Widget position updated successfully');
     } catch (error) {
       console.error('Failed to update widget position:', error);
+    } finally {
+      setDraggedWidget(null);
+      setTempPosition(null);
     }
-  }, [widgets, handleWidgetPositionChange]);
+  }, [draggedWidget, handleWidgetPositionChange]);
 
   const handleBoardClick = () => {
     setSelectedWidgetId(null);
+  };
+
+  const handleWidgetSelect = (widgetId: string) => {
+    setSelectedWidgetId(widgetId);
+  };
+
+  const handleBringWidgetToFront = () => {
+    if (selectedWidgetId) {
+      handleBringToFront(selectedWidgetId);
+    }
+  };
+
+  const handleSendWidgetToBack = () => {
+    if (selectedWidgetId) {
+      handleSendToBack(selectedWidgetId);
+    }
   };
 
   if (loading) {
@@ -100,24 +135,59 @@ const Board = ({ boardId, onUpdate }: BoardProps) => {
     );
   }
 
+  // Sort widgets by z-index for proper rendering order
+  const sortedWidgets = [...widgets].sort((a, b) => (a.settings?.zIndex || 0) - (b.settings?.zIndex || 0));
+
   return (
     <div 
       className="cork-board board-canvas relative w-full h-[calc(100vh-64px)] overflow-auto"
       onClick={handleBoardClick}
       ref={boardRef}
     >
-      <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-        {widgets.map((widget) => (
-          <WidgetRenderer
-            key={`${widget.id}-${widget.updatedAt?.getTime() || Date.now()}`}
-            widget={widget}
-            isSelected={selectedWidgetId === widget.id}
-            onClick={() => setSelectedWidgetId(widget.id)}
-            onUpdate={(content) => handleUpdateWidget(widget.id, content)}
-            onUpdateSettings={(settings) => handleUpdateWidgetSettings && handleUpdateWidgetSettings(widget.id, settings)}
-          />
-        ))}
+      <DndContext 
+        sensors={sensors} 
+        onDragStart={handleDragStart}
+        onDragMove={handleDragMove}
+        onDragEnd={handleDragEnd}
+      >
+        {sortedWidgets.map((widget) => {
+          // Use temp position during drag if this widget is being dragged
+          const isBeingDragged = draggedWidget?.id === widget.id;
+          const displayPosition = isBeingDragged && tempPosition ? tempPosition : widget.position;
+          
+          return (
+            <WidgetRenderer
+              key={`${widget.id}-${widget.updatedAt?.getTime() || Date.now()}`}
+              widget={{
+                ...widget,
+                position: displayPosition
+              }}
+              isSelected={selectedWidgetId === widget.id}
+              onClick={() => handleWidgetSelect(widget.id)}
+              onUpdate={(content) => handleUpdateWidget(widget.id, content)}
+              onUpdateSettings={(settings) => handleUpdateWidgetSettings && handleUpdateWidgetSettings(widget.id, settings)}
+            />
+          );
+        })}
       </DndContext>
+
+      {/* Layer controls for selected widget */}
+      {selectedWidgetId && (
+        <div className="fixed bottom-4 right-4 flex flex-col gap-2 bg-white p-2 rounded-lg shadow-lg border">
+          <button
+            onClick={handleBringWidgetToFront}
+            className="px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
+          >
+            Bring to Front
+          </button>
+          <button
+            onClick={handleSendWidgetToBack}
+            className="px-3 py-1 text-xs bg-gray-500 text-white rounded hover:bg-gray-600"
+          >
+            Send to Back
+          </button>
+        </div>
+      )}
 
       <WidgetStore 
         onAddWidget={handleAddWidget} 

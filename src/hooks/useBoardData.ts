@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useEffect } from 'react';
 import { Widget } from '@/types';
 import { CreateWidgetData } from '@/types/widget';
@@ -28,6 +29,16 @@ export const useBoardData = (boardId: string) => {
 
   // Combine notes from database with local image widgets
   const allWidgets = [...notesAsWidgets, ...imageWidgets];
+
+  // Get the highest z-index for bringing widgets to front
+  const getMaxZIndex = useCallback(() => {
+    return Math.max(0, ...allWidgets.map(w => w.settings?.zIndex || 0));
+  }, [allWidgets]);
+
+  // Get the lowest z-index for sending widgets to back
+  const getMinZIndex = useCallback(() => {
+    return Math.min(0, ...allWidgets.map(w => w.settings?.zIndex || 0));
+  }, [allWidgets]);
 
   const handleAddWidget = useCallback(async (widget: Widget) => {
     console.log('handleAddWidget called with:', widget);
@@ -88,6 +99,7 @@ export const useBoardData = (boardId: string) => {
           y: roundedY,
           settings: { 
             size: sizeSettings,
+            zIndex: getMaxZIndex() + 1, // Place new widgets on top
             ...widget.settings
           }
         });
@@ -98,7 +110,7 @@ export const useBoardData = (boardId: string) => {
         toast.error(friendlyError.message);
       }
     }
-  }, [createNote, createWidget, boardId]);
+  }, [createNote, createWidget, boardId, getMaxZIndex]);
 
   const handleUpdateWidget = useCallback(async (widgetId: string, updatedContent: string) => {
     // Check if it's a note widget (from database)
@@ -218,6 +230,20 @@ export const useBoardData = (boardId: string) => {
     }
   }, [notesAsWidgets, updateNotePosition]);
 
+  const handleBringToFront = useCallback(async (widgetId: string) => {
+    const newZIndex = getMaxZIndex() + 1;
+    await handleUpdateWidgetSettings(widgetId, { 
+      zIndex: newZIndex
+    });
+  }, [getMaxZIndex, handleUpdateWidgetSettings]);
+
+  const handleSendToBack = useCallback(async (widgetId: string) => {
+    const newZIndex = getMinZIndex() - 1;
+    await handleUpdateWidgetSettings(widgetId, { 
+      zIndex: newZIndex
+    });
+  }, [getMinZIndex, handleUpdateWidgetSettings]);
+
   return {
     widgets: allWidgets,
     loading: notesLoading,
@@ -225,5 +251,7 @@ export const useBoardData = (boardId: string) => {
     handleUpdateWidget,
     handleUpdateWidgetSettings,
     handleWidgetPositionChange,
+    handleBringToFront,
+    handleSendToBack,
   };
 };
