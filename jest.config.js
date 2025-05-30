@@ -8,7 +8,10 @@ module.exports = {
   },
   transform: {
     '^.+\\.(ts|tsx)$': ['ts-jest', {
-      useESM: true,
+      useESM: false,
+      tsconfig: {
+        jsx: 'react-jsx',
+      },
     }],
   },
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx'],
@@ -24,4 +27,7 @@ module.exports = {
     '<rootDir>/src/**/__tests__/**/*.{ts,tsx}',
     '<rootDir>/src/**/*.{test,spec}.{ts,tsx}',
   ],
+  testEnvironmentOptions: {
+    customExportConditions: [''],
+  },
 };
