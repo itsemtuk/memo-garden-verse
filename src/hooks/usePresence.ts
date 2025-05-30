@@ -54,8 +54,11 @@ export const usePresence = (boardId: string) => {
         
         Object.entries(newState).forEach(([userId, presences]) => {
           if (userId !== user.id && presences && presences.length > 0) {
-            const latestPresence = presences[0] as UserPresence;
-            users.push(latestPresence);
+            // Properly handle the presence data structure
+            const presenceData = presences[0];
+            if (presenceData && typeof presenceData === 'object' && 'userId' in presenceData) {
+              users.push(presenceData as UserPresence);
+            }
           }
         });
         
