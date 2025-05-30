@@ -60,7 +60,7 @@ export const WidgetRenderer = ({ widget, isSelected, onClick, onUpdate, onUpdate
       widget={widget}
       isSelected={isSelected}
       onClick={onClick}
-      onUpdate={onUpdateSettings}
+      onUpdate={onUpdateSettings || (() => {})}
     />
   );
 };
