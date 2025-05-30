@@ -1,6 +1,6 @@
 
 import { WidgetRenderer } from "@/components/widgets/WidgetRegistry";
-import AddWidgetMenu from "@/components/AddWidgetMenu";
+import WidgetStore from "@/components/WidgetStore";
 import { Widget } from "@/types";
 import { DndContext, DragEndEvent, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -108,7 +108,7 @@ const Board = ({ boardId, onUpdate }: BoardProps) => {
         ))}
       </DndContext>
 
-      <AddWidgetMenu 
+      <WidgetStore 
         onAddWidget={handleAddWidget} 
         centerPosition={centerPosition} 
         boardId={boardId}
