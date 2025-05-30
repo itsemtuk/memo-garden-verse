@@ -5,6 +5,13 @@ import ImageWidget from "./ImageWidget";
 import WeatherWidget from "./WeatherWidget";
 import PlantReminderWidget from "./PlantReminderWidget";
 import ShoppingListWidget from "./ShoppingListWidget";
+import CalendarWidget from "./CalendarWidget";
+import TodoWidget from "./TodoWidget";
+import RichTextWidget from "./RichTextWidget";
+import TimerWidget from "./TimerWidget";
+import HabitTrackerWidget from "./HabitTrackerWidget";
+import NewsFeedWidget from "./NewsFeedWidget";
+import QuotesWidget from "./QuotesWidget";
 
 interface WidgetRendererProps {
   widget: Widget;
@@ -20,6 +27,13 @@ const widgetRegistry = {
   weather: WeatherWidget,
   plant_reminder: PlantReminderWidget,
   shopping_list: ShoppingListWidget,
+  calendar: CalendarWidget,
+  todo_list: TodoWidget,
+  rich_text: RichTextWidget,
+  timer: TimerWidget,
+  habit_tracker: HabitTrackerWidget,
+  news_feed: NewsFeedWidget,
+  quotes: QuotesWidget,
   social: NoteWidget, // Placeholder for now
 };
 
@@ -55,45 +69,16 @@ export const WidgetRenderer = ({ widget, isSelected, onClick, onUpdate, onUpdate
     );
   }
 
-  // For specialized widgets (weather, plant_reminder, shopping_list)
-  // These widgets use onUpdateSettings but expect it as onUpdate prop
-  if (widget.type === 'weather') {
-    const WeatherComponent = WidgetComponent as typeof WeatherWidget;
-    return (
-      <WeatherComponent
-        widget={widget}
-        isSelected={isSelected}
-        onClick={onClick}
-        onUpdate={onUpdateSettings || (() => {})}
-      />
-    );
-  }
-
-  if (widget.type === 'plant_reminder') {
-    const PlantComponent = WidgetComponent as typeof PlantReminderWidget;
-    return (
-      <PlantComponent
-        widget={widget}
-        isSelected={isSelected}
-        onClick={onClick}
-        onUpdate={onUpdateSettings || (() => {})}
-      />
-    );
-  }
-
-  if (widget.type === 'shopping_list') {
-    const ShoppingComponent = WidgetComponent as typeof ShoppingListWidget;
-    return (
-      <ShoppingComponent
-        widget={widget}
-        isSelected={isSelected}
-        onClick={onClick}
-        onUpdate={onUpdateSettings || (() => {})}
-      />
-    );
-  }
-
-  return null;
+  // For specialized widgets that use onUpdateSettings
+  const SpecializedComponent = WidgetComponent as any;
+  return (
+    <SpecializedComponent
+      widget={widget}
+      isSelected={isSelected}
+      onClick={onClick}
+      onUpdate={onUpdateSettings || (() => {})}
+    />
+  );
 };
 
 export default WidgetRenderer;

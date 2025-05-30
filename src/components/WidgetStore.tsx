@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +7,10 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTr
 import { Widget, WidgetType } from "@/types";
 import { v4 as uuidv4 } from "uuid";
 import { useFileUpload } from "@/hooks/useFileUpload";
-import { Cloud, Leaf, ShoppingCart, StickyNote, Image, Plus } from "lucide-react";
+import { 
+  Cloud, Leaf, ShoppingCart, StickyNote, Image, Plus, Calendar, 
+  ListTodo, FileText, Timer, Target, Newspaper, Quote
+} from "lucide-react";
 import { 
   noteContentSchema, 
   plantNameSchema, 
@@ -93,6 +95,55 @@ const WidgetStore = ({ onAddWidget, centerPosition, boardId }: WidgetStoreProps)
       label: "Shopping List", 
       icon: ShoppingCart,
       description: "Keep track of items to buy",
+      color: "bg-purple-100 hover:bg-purple-200"
+    },
+    { 
+      id: "calendar" as WidgetType, 
+      label: "Calendar", 
+      icon: Calendar,
+      description: "Schedule and manage events",
+      color: "bg-indigo-100 hover:bg-indigo-200"
+    },
+    { 
+      id: "todo_list" as WidgetType, 
+      label: "Todo List", 
+      icon: ListTodo,
+      description: "Track tasks and to-dos",
+      color: "bg-green-100 hover:bg-green-200"
+    },
+    { 
+      id: "rich_text" as WidgetType, 
+      label: "Rich Text", 
+      icon: FileText,
+      description: "Formatted notes with styling",
+      color: "bg-blue-100 hover:bg-blue-200"
+    },
+    { 
+      id: "timer" as WidgetType, 
+      label: "Timer", 
+      icon: Timer,
+      description: "Pomodoro and focus timer",
+      color: "bg-red-100 hover:bg-red-200"
+    },
+    { 
+      id: "habit_tracker" as WidgetType, 
+      label: "Habit Tracker", 
+      icon: Target,
+      description: "Track daily habits",
+      color: "bg-green-100 hover:bg-green-200"
+    },
+    { 
+      id: "news_feed" as WidgetType, 
+      label: "News Feed", 
+      icon: Newspaper,
+      description: "Latest news and updates",
+      color: "bg-gray-100 hover:bg-gray-200"
+    },
+    { 
+      id: "quotes" as WidgetType, 
+      label: "Daily Quotes", 
+      icon: Quote,
+      description: "Inspirational quotes",
       color: "bg-purple-100 hover:bg-purple-200"
     },
   ];
@@ -203,6 +254,125 @@ const WidgetStore = ({ onAddWidget, centerPosition, boardId }: WidgetStoreProps)
             updatedAt: now,
           };
           break;
+
+        case "calendar":
+          newWidget = {
+            id: uuidv4(),
+            type: "calendar",
+            content: "calendar",
+            position: {
+              x: centerPosition.x - 140,
+              y: centerPosition.y - 160,
+            },
+            rotation: randomRotation,
+            size: { width: 280, height: 320 },
+            settings: { events: [] },
+            createdAt: now,
+            updatedAt: now,
+          };
+          break;
+
+        case "todo_list":
+          newWidget = {
+            id: uuidv4(),
+            type: "todo_list",
+            content: "todo_list",
+            position: {
+              x: centerPosition.x - 130,
+              y: centerPosition.y - 150,
+            },
+            rotation: randomRotation,
+            size: { width: 260, height: 300 },
+            settings: { todos: [] },
+            createdAt: now,
+            updatedAt: now,
+          };
+          break;
+
+        case "rich_text":
+          newWidget = {
+            id: uuidv4(),
+            type: "rich_text",
+            content: "rich_text",
+            position: {
+              x: centerPosition.x - 160,
+              y: centerPosition.y - 120,
+            },
+            rotation: randomRotation,
+            size: { width: 320, height: 240 },
+            settings: { content: "" },
+            createdAt: now,
+            updatedAt: now,
+          };
+          break;
+
+        case "timer":
+          newWidget = {
+            id: uuidv4(),
+            type: "timer",
+            content: "timer",
+            position: {
+              x: centerPosition.x - 100,
+              y: centerPosition.y - 120,
+            },
+            rotation: randomRotation,
+            size: { width: 200, height: 240 },
+            settings: { duration: 1500 },
+            createdAt: now,
+            updatedAt: now,
+          };
+          break;
+
+        case "habit_tracker":
+          newWidget = {
+            id: uuidv4(),
+            type: "habit_tracker",
+            content: "habit_tracker",
+            position: {
+              x: centerPosition.x - 140,
+              y: centerPosition.y - 160,
+            },
+            rotation: randomRotation,
+            size: { width: 280, height: 320 },
+            settings: { habits: [] },
+            createdAt: now,
+            updatedAt: now,
+          };
+          break;
+
+        case "news_feed":
+          newWidget = {
+            id: uuidv4(),
+            type: "news_feed",
+            content: "news_feed",
+            position: {
+              x: centerPosition.x - 160,
+              y: centerPosition.y - 140,
+            },
+            rotation: randomRotation,
+            size: { width: 320, height: 280 },
+            settings: { news: [] },
+            createdAt: now,
+            updatedAt: now,
+          };
+          break;
+
+        case "quotes":
+          newWidget = {
+            id: uuidv4(),
+            type: "quotes",
+            content: "quotes",
+            position: {
+              x: centerPosition.x - 150,
+              y: centerPosition.y - 100,
+            },
+            rotation: randomRotation,
+            size: { width: 300, height: 200 },
+            settings: {},
+            createdAt: now,
+            updatedAt: now,
+          };
+          break;
       }
 
       if (newWidget) {
@@ -244,6 +414,22 @@ const WidgetStore = ({ onAddWidget, centerPosition, boardId }: WidgetStoreProps)
 
   const renderWidgetForm = () => {
     if (!selectedWidget) return null;
+
+    // For new widgets that don't need forms, show simple info
+    if (['calendar', 'todo_list', 'rich_text', 'timer', 'habit_tracker', 'news_feed', 'quotes'].includes(selectedWidget)) {
+      const widgetInfo = widgetTypes.find(w => w.id === selectedWidget);
+      const Icon = widgetInfo?.icon || StickyNote;
+      
+      return (
+        <div className="space-y-4">
+          <div className="text-center text-gray-600">
+            <Icon className="w-12 h-12 mx-auto mb-2 text-blue-500" />
+            <p className="font-medium">{widgetInfo?.label} Widget</p>
+            <p className="text-sm">{widgetInfo?.description}</p>
+          </div>
+        </div>
+      );
+    }
 
     switch (selectedWidget) {
       case "note":
@@ -398,6 +584,14 @@ const WidgetStore = ({ onAddWidget, centerPosition, boardId }: WidgetStoreProps)
       case "plant_reminder":
         return formData.plantName.trim().length > 0;
       case "shopping_list":
+        return true;
+      case "calendar":
+      case "todo_list":
+      case "rich_text":
+      case "timer":
+      case "habit_tracker":
+      case "news_feed":
+      case "quotes":
         return true;
       default:
         return false;
