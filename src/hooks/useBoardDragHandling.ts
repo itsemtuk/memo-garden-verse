@@ -15,11 +15,11 @@ export const useBoardDragHandling = ({ widgets, handleWidgetPositionChange }: Us
 
   // Constrain position to board boundaries
   const constrainPosition = useCallback((x: number, y: number, widgetWidth = 200, widgetHeight = 100) => {
-    if (!boardRef.current) return { x, y };
+    if (!boardRef.current) return { x: Math.max(0, x), y: Math.max(0, y) };
     
     const boardRect = boardRef.current.getBoundingClientRect();
-    const maxX = boardRect.width - widgetWidth;
-    const maxY = boardRect.height - widgetHeight;
+    const maxX = Math.max(0, boardRect.width - widgetWidth);
+    const maxY = Math.max(0, boardRect.height - widgetHeight);
     
     return {
       x: Math.max(0, Math.min(x, maxX)),
@@ -32,11 +32,11 @@ export const useBoardDragHandling = ({ widgets, handleWidgetPositionChange }: Us
     const widget = widgets.find(w => w.id === widgetId);
     
     if (widget) {
+      console.log('Drag started for widget:', widgetId, 'at position:', widget.position);
       setDraggedWidget({
         id: widgetId,
         startPosition: widget.position
       });
-      console.log('Drag started for widget:', widgetId, 'at position:', widget.position);
     }
   }, [widgets]);
 
@@ -61,10 +61,13 @@ export const useBoardDragHandling = ({ widgets, handleWidgetPositionChange }: Us
   }, [draggedWidget, widgets, constrainPosition]);
 
   const handleDragEnd = useCallback(async (event: DragEndEvent) => {
+    console.log('Drag end event:', event);
+    
     const { active, delta } = event;
     const widgetId = active.id as string;
     
     if (!draggedWidget || !delta) {
+      console.log('No drag data, clearing state');
       setDraggedWidget(null);
       setDraggedWidgets(new Map());
       return;
@@ -81,20 +84,21 @@ export const useBoardDragHandling = ({ widgets, handleWidgetPositionChange }: Us
     // Constrain final position to board boundaries
     const constrainedPosition = constrainPosition(newX, newY, widgetWidth, widgetHeight);
 
-    console.log('Drag end - widget:', widgetId, 'final position:', constrainedPosition);
+    console.log('Drag end - widget:', widgetId, 'final constrained position:', constrainedPosition);
+    console.log('Original position:', draggedWidget.startPosition, 'Delta:', delta);
+
+    // Clear temporary drag state immediately for responsiveness
+    setDraggedWidgets(new Map());
+    setDraggedWidget(null);
 
     try {
-      // Clear temporary drag state immediately for responsiveness
-      setDraggedWidgets(new Map());
-      setDraggedWidget(null);
-      
       // Persist to database with constrained position
+      console.log('Calling handleWidgetPositionChange with:', widgetId, constrainedPosition);
       await handleWidgetPositionChange(widgetId, constrainedPosition.x, constrainedPosition.y);
-      console.log('Widget position updated successfully to:', constrainedPosition);
+      console.log('Widget position updated successfully in database');
     } catch (error) {
       console.error('Failed to update widget position:', error);
-      // Revert on error by refreshing
-      setDraggedWidgets(new Map());
+      // Don't revert here, let the real-time updates handle any corrections
     }
   }, [draggedWidget, handleWidgetPositionChange, widgets, constrainPosition]);
 

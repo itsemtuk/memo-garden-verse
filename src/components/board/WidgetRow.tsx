@@ -37,20 +37,25 @@ const DraggableWidget: React.FC<{
   // Use draggedPosition if available (during drag), otherwise use widget position
   const currentPosition = draggedPosition || widget.position;
   
-  console.log(`Widget ${widget.id} rendered at position:`, currentPosition, 'isDragging:', isDragging);
+  console.log(`Widget ${widget.id} rendered at position:`, currentPosition, 'isDragging:', isDragging, 'draggedPosition:', draggedPosition);
 
   return (
     <div
       ref={setNodeRef}
-      className={`absolute ${isDragging ? 'opacity-50 z-[1000]' : ''} ${readonly ? '' : 'cursor-move'}`}
+      className={`absolute transition-none ${isDragging ? 'opacity-50 z-[1000]' : ''} ${readonly ? '' : 'cursor-move'}`}
       style={{
         left: `${currentPosition.x}px`,
         top: `${currentPosition.y}px`,
         zIndex: isDragging ? 1000 : (widget.settings?.zIndex || 1),
         transform: `rotate(${widget.rotation || 0}deg)`,
+        pointerEvents: 'auto',
       }}
       {...attributes}
       {...(readonly ? {} : listeners)}
+      onClick={(e) => {
+        e.stopPropagation();
+        onSelect();
+      }}
     >
       <WidgetRenderer
         widget={widget}
@@ -72,10 +77,10 @@ const WidgetRow: React.FC<WidgetRowProps> = ({
   draggedWidgets,
   readonly = false,
 }) => {
-  console.log(`WidgetRow rendering ${widgets.length} widgets`);
+  console.log(`WidgetRow rendering ${widgets.length} widgets`, widgets.map(w => ({ id: w.id, position: w.position })));
   
   return (
-    <>
+    <div className="absolute inset-0 pointer-events-none">
       {widgets.map((widget) => {
         const draggedPosition = draggedWidgets.get(widget.id);
         
@@ -92,7 +97,7 @@ const WidgetRow: React.FC<WidgetRowProps> = ({
           />
         );
       })}
-    </>
+    </div>
   );
 };
 
