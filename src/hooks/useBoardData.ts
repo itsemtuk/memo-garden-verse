@@ -22,6 +22,7 @@ export const useBoardData = (boardId: string) => {
     updateNoteContent,
     updateWidgetSettings,
     deleteNote,
+    refreshNotes,
   } = useNotes(boardId);
 
   const [imageWidgets, setImageWidgets] = useState<Widget[]>([]);
@@ -57,7 +58,11 @@ export const useBoardData = (boardId: string) => {
         console.log('Creating note widget');
         // Validate and sanitize content
         const sanitizedContent = validateAndSanitizeContent(widget.content);
-        await createNote(sanitizedContent, roundedX, roundedY);
+        const createdNote = await createNote(sanitizedContent, roundedX, roundedY);
+        console.log('Note created successfully:', createdNote);
+        
+        // Force refresh to ensure the new widget appears immediately
+        await refreshNotes();
       } catch (error) {
         console.error('Failed to create note:', error);
         const friendlyError = createUserFriendlyError('Failed to create note. Please try again.');
@@ -80,7 +85,7 @@ export const useBoardData = (boardId: string) => {
             Math.min(Math.max(widget.size.height || 200, 100), 800)
         } : { width: 300, height: 200 };
 
-        await createWidget({
+        const createdWidget = await createWidget({
           type: widget.type as 'note' | 'image',
           content: sanitizedContent,
           x: roundedX,
@@ -90,14 +95,17 @@ export const useBoardData = (boardId: string) => {
             ...widget.settings
           }
         });
-        console.log('Widget created successfully');
+        console.log('Widget created successfully:', createdWidget);
+        
+        // Force refresh to ensure the new widget appears immediately
+        await refreshNotes();
       } catch (error) {
         console.error('Failed to create widget:', error);
         const friendlyError = createUserFriendlyError('Failed to create widget. Please try again.');
         toast.error(friendlyError.message);
       }
     }
-  }, [createNote, createWidget, boardId]);
+  }, [createNote, createWidget, boardId, refreshNotes]);
 
   const handleUpdateWidget = useCallback(async (widgetId: string, updatedContent: string) => {
     // Check if it's a note widget (from database)

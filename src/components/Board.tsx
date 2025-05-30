@@ -52,6 +52,11 @@ const Board = ({ boardId, onUpdate }: BoardProps) => {
     }
   }, [widgets, onUpdate]);
 
+  // Force re-render when widgets change to ensure new widgets appear immediately
+  useEffect(() => {
+    console.log('Widgets updated in Board component:', widgets.length);
+  }, [widgets]);
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -65,10 +70,15 @@ const Board = ({ boardId, onUpdate }: BoardProps) => {
     const widgetId = active.id as string;
     
     const widget = widgets.find(w => w.id === widgetId);
-    if (!widget) return;
+    if (!widget) {
+      console.warn('Widget not found for drag end:', widgetId);
+      return;
+    }
 
     const newX = widget.position.x + delta.x;
     const newY = widget.position.y + delta.y;
+
+    console.log('Dragging widget:', widgetId, 'to position:', { newX, newY });
 
     try {
       await handleWidgetPositionChange(widgetId, newX, newY);
@@ -98,7 +108,7 @@ const Board = ({ boardId, onUpdate }: BoardProps) => {
       <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
         {widgets.map((widget) => (
           <WidgetRenderer
-            key={widget.id}
+            key={`${widget.id}-${widget.updatedAt?.getTime() || Date.now()}`}
             widget={widget}
             isSelected={selectedWidgetId === widget.id}
             onClick={() => setSelectedWidgetId(widget.id)}
