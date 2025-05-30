@@ -16,10 +16,10 @@ interface TranslatorWidgetProps {
 }
 
 const TranslatorWidget = ({ widget, isSelected, onClick, onUpdate }: TranslatorWidgetProps) => {
-  const [inputText, setInputText] = useState("");
-  const [outputText, setOutputText] = useState("");
-  const [fromLang, setFromLang] = useState("en");
-  const [toLang, setToLang] = useState("es");
+  const [inputText, setInputText] = useState(widget.settings?.inputText || "");
+  const [outputText, setOutputText] = useState(widget.settings?.outputText || "");
+  const [fromLang, setFromLang] = useState(widget.settings?.fromLang || "en");
+  const [toLang, setToLang] = useState(widget.settings?.toLang || "es");
 
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: widget.id,
@@ -45,9 +45,30 @@ const TranslatorWidget = ({ widget, isSelected, onClick, onUpdate }: TranslatorW
     { code: "zh", name: "Chinese" },
   ];
 
+  const updateSettings = (newSettings: any) => {
+    onUpdate({ ...widget.settings, ...newSettings });
+  };
+
   const handleTranslate = () => {
     // Placeholder translation - in real implementation would use Google Translate API
-    setOutputText(`[Translated from ${fromLang} to ${toLang}]: ${inputText}`);
+    const translated = `[Translated from ${fromLang} to ${toLang}]: ${inputText}`;
+    setOutputText(translated);
+    updateSettings({ inputText, outputText: translated, fromLang, toLang });
+  };
+
+  const handleInputChange = (value: string) => {
+    setInputText(value);
+    updateSettings({ inputText: value, outputText, fromLang, toLang });
+  };
+
+  const handleFromLangChange = (value: string) => {
+    setFromLang(value);
+    updateSettings({ inputText, outputText, fromLang: value, toLang });
+  };
+
+  const handleToLangChange = (value: string) => {
+    setToLang(value);
+    updateSettings({ inputText, outputText, fromLang, toLang: value });
   };
 
   return (
@@ -77,7 +98,7 @@ const TranslatorWidget = ({ widget, isSelected, onClick, onUpdate }: TranslatorW
         </div>
 
         <div className="flex gap-2 mb-3">
-          <Select value={fromLang} onValueChange={setFromLang}>
+          <Select value={fromLang} onValueChange={handleFromLangChange}>
             <SelectTrigger className="flex-1">
               <SelectValue />
             </SelectTrigger>
@@ -88,7 +109,7 @@ const TranslatorWidget = ({ widget, isSelected, onClick, onUpdate }: TranslatorW
             </SelectContent>
           </Select>
           <ArrowRight className="w-4 h-4 mt-2 text-gray-400" />
-          <Select value={toLang} onValueChange={setToLang}>
+          <Select value={toLang} onValueChange={handleToLangChange}>
             <SelectTrigger className="flex-1">
               <SelectValue />
             </SelectTrigger>
@@ -104,7 +125,7 @@ const TranslatorWidget = ({ widget, isSelected, onClick, onUpdate }: TranslatorW
           <Textarea
             placeholder="Enter text to translate..."
             value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
+            onChange={(e) => handleInputChange(e.target.value)}
             className="flex-1"
             onClick={(e) => e.stopPropagation()}
           />
