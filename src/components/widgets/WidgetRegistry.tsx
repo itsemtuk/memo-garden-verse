@@ -33,8 +33,9 @@ export const WidgetRenderer = ({ widget, isSelected, onClick, onUpdate, onUpdate
 
   // Handle different prop patterns for different widget types
   if (widget.type === 'note' || widget.type === 'social') {
+    const NoteComponent = WidgetComponent as typeof NoteWidget;
     return (
-      <WidgetComponent
+      <NoteComponent
         widget={widget}
         isSelected={isSelected}
         onClick={onClick}
@@ -44,8 +45,9 @@ export const WidgetRenderer = ({ widget, isSelected, onClick, onUpdate, onUpdate
   }
 
   if (widget.type === 'image') {
+    const ImageComponent = WidgetComponent as typeof ImageWidget;
     return (
-      <WidgetComponent
+      <ImageComponent
         widget={widget}
         isSelected={isSelected}
         onClick={onClick}
@@ -55,14 +57,43 @@ export const WidgetRenderer = ({ widget, isSelected, onClick, onUpdate, onUpdate
 
   // For specialized widgets (weather, plant_reminder, shopping_list)
   // These widgets use onUpdateSettings but expect it as onUpdate prop
-  return (
-    <WidgetComponent
-      widget={widget}
-      isSelected={isSelected}
-      onClick={onClick}
-      onUpdate={onUpdateSettings || (() => {})}
-    />
-  );
+  if (widget.type === 'weather') {
+    const WeatherComponent = WidgetComponent as typeof WeatherWidget;
+    return (
+      <WeatherComponent
+        widget={widget}
+        isSelected={isSelected}
+        onClick={onClick}
+        onUpdate={onUpdateSettings || (() => {})}
+      />
+    );
+  }
+
+  if (widget.type === 'plant_reminder') {
+    const PlantComponent = WidgetComponent as typeof PlantReminderWidget;
+    return (
+      <PlantComponent
+        widget={widget}
+        isSelected={isSelected}
+        onClick={onClick}
+        onUpdate={onUpdateSettings || (() => {})}
+      />
+    );
+  }
+
+  if (widget.type === 'shopping_list') {
+    const ShoppingComponent = WidgetComponent as typeof ShoppingListWidget;
+    return (
+      <ShoppingComponent
+        widget={widget}
+        isSelected={isSelected}
+        onClick={onClick}
+        onUpdate={onUpdateSettings || (() => {})}
+      />
+    );
+  }
+
+  return null;
 };
 
 export default WidgetRenderer;
