@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { Widget } from '@/types';
-import { useDraggable } from '@dnd-kit/core';
 import { WidgetRenderer } from '@/components/widgets/WidgetRegistry';
 
 interface WidgetRowProps {
@@ -14,48 +13,6 @@ interface WidgetRowProps {
   draggedWidgets: Map<string, { x: number; y: number }>;
   readonly?: boolean;
 }
-
-const DraggableWidget = ({ widget, isSelected, onSelect, onUpdate, onUpdateSettings, readonly }: {
-  widget: Widget;
-  isSelected: boolean;
-  onSelect: (widgetId: string) => void;
-  onUpdate: (widgetId: string, content: string) => void;
-  onUpdateSettings?: (widgetId: string, settings: any) => void;
-  readonly?: boolean;
-}) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    isDragging,
-  } = useDraggable({
-    id: widget.id,
-    disabled: readonly,
-  });
-
-  const style = transform ? {
-    transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
-  } : undefined;
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      {...(readonly ? {} : listeners)}
-      className={`${isDragging ? 'opacity-50' : ''} ${readonly ? '' : 'cursor-move'}`}
-    >
-      <WidgetRenderer
-        widget={widget}
-        isSelected={isSelected}
-        onClick={() => !readonly && onSelect(widget.id)}
-        onUpdate={(content: string) => !readonly && onUpdate(widget.id, content)}
-        onUpdateSettings={(settings: any) => !readonly && onUpdateSettings?.(widget.id, settings)}
-      />
-    </div>
-  );
-};
 
 const WidgetRow: React.FC<WidgetRowProps> = ({
   widgets,
@@ -73,6 +30,8 @@ const WidgetRow: React.FC<WidgetRowProps> = ({
         const draggedPosition = draggedWidgets.get(widget.id);
         const position = draggedPosition || widget.position;
         
+        console.log(`Rendering widget ${widget.id} at position:`, position);
+        
         return (
           <div
             key={widget.id}
@@ -84,13 +43,12 @@ const WidgetRow: React.FC<WidgetRowProps> = ({
               transform: `rotate(${widget.rotation || 0}deg)`,
             }}
           >
-            <DraggableWidget
+            <WidgetRenderer
               widget={widget}
               isSelected={selectedWidgetId === widget.id}
-              onSelect={onWidgetSelect}
-              onUpdate={onUpdateWidget}
-              onUpdateSettings={onUpdateWidgetSettings}
-              readonly={readonly}
+              onClick={() => !readonly && onWidgetSelect(widget.id)}
+              onUpdate={(content: string) => !readonly && onUpdateWidget(widget.id, content)}
+              onUpdateSettings={(settings: any) => !readonly && onUpdateWidgetSettings?.(widget.id, settings)}
             />
           </div>
         );
