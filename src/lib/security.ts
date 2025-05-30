@@ -7,7 +7,7 @@ export const sanitizeHtml = (content: string): string => {
   return DOMPurify.sanitize(content, {
     ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 'span'],
     ALLOWED_ATTR: [],
-    REMOVE_DATA_ATTR: true,
+    FORBID_ATTR: ['data-*'],
   });
 };
 
