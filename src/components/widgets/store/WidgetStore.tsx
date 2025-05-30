@@ -1,4 +1,3 @@
-
 import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -17,9 +16,10 @@ interface WidgetStoreProps {
   onAddWidget: (widget: Widget) => void;
   centerPosition: { x: number; y: number };
   boardId: string;
+  isMobile?: boolean;
 }
 
-const WidgetStore = ({ onAddWidget, centerPosition, boardId }: WidgetStoreProps) => {
+const WidgetStore = ({ onAddWidget, centerPosition, boardId, isMobile = false }: WidgetStoreProps) => {
   const [open, setOpen] = useState(false);
   const [selectedWidget, setSelectedWidget] = useState<WidgetType | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -78,7 +78,9 @@ const WidgetStore = ({ onAddWidget, centerPosition, boardId }: WidgetStoreProps)
       });
 
       onAddWidget(newWidget);
-      setOpen(false);
+      if (!isMobile) {
+        setOpen(false);
+      }
       resetForm();
       clearError('note');
       clearError('image');
@@ -130,6 +132,43 @@ const WidgetStore = ({ onAddWidget, centerPosition, boardId }: WidgetStoreProps)
     }
   };
 
+  // For mobile, render content directly without Sheet wrapper
+  if (isMobile) {
+    return (
+      <div className="space-y-4">
+        {!selectedWidget ? (
+          <>
+            <WidgetSearch
+              searchQuery={searchQuery}
+              selectedCategory={selectedCategory}
+              onSearchChange={setSearchQuery}
+              onCategoryChange={setSelectedCategory}
+            />
+            
+            <WidgetGrid
+              widgets={filteredWidgets}
+              onSelectWidget={(widgetId) => setSelectedWidget(widgetId as WidgetType)}
+            />
+          </>
+        ) : (
+          <WidgetForm
+            selectedWidget={selectedWidget}
+            formData={formData}
+            errors={errors}
+            uploading={uploading}
+            onFormDataChange={handleFormDataChange}
+            onFileUpload={handleFileUpload}
+            onAddWidget={handleAddWidget}
+            onBack={() => setSelectedWidget(null)}
+            isFormValid={isFormValid}
+            clearError={clearError}
+          />
+        )}
+      </div>
+    );
+  }
+
+  // Desktop version with Sheet
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>

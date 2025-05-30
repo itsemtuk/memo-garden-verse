@@ -23,6 +23,7 @@ interface BoardProps {
 
 const Board = ({ boardId, onUpdate }: BoardProps) => {
   const isMobile = useIsMobile();
+  
   const {
     widgets,
     loading,
@@ -318,7 +319,7 @@ const Board = ({ boardId, onUpdate }: BoardProps) => {
         </>
       )}
 
-      {/* Widget Store - Mobile optimized with fixed dual navigation */}
+      {/* Widget Store */}
       {isMobile ? (
         <Drawer open={showMobileWidgetStore} onOpenChange={setShowMobileWidgetStore}>
           <DrawerTrigger asChild>
@@ -335,6 +336,7 @@ const Board = ({ boardId, onUpdate }: BoardProps) => {
                 onAddWidget={handleWidgetAdded} 
                 centerPosition={centerPosition} 
                 boardId={boardId}
+                isMobile={true}
               />
             </div>
           </DrawerContent>
@@ -344,6 +346,7 @@ const Board = ({ boardId, onUpdate }: BoardProps) => {
           onAddWidget={handleWidgetAdded} 
           centerPosition={centerPosition} 
           boardId={boardId}
+          isMobile={false}
         />
       )}
     </div>
