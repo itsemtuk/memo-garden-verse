@@ -22,7 +22,6 @@ export const useBoardData = (boardId: string) => {
     updateNoteContent,
     updateWidgetSettings,
     deleteNote,
-    refreshNotes,
   } = useNotes(boardId);
 
   const [imageWidgets, setImageWidgets] = useState<Widget[]>([]);
@@ -60,9 +59,6 @@ export const useBoardData = (boardId: string) => {
         const sanitizedContent = validateAndSanitizeContent(widget.content);
         const createdNote = await createNote(sanitizedContent, roundedX, roundedY);
         console.log('Note created successfully:', createdNote);
-        
-        // Force refresh to ensure the new widget appears immediately
-        await refreshNotes();
       } catch (error) {
         console.error('Failed to create note:', error);
         const friendlyError = createUserFriendlyError('Failed to create note. Please try again.');
@@ -96,16 +92,13 @@ export const useBoardData = (boardId: string) => {
           }
         });
         console.log('Widget created successfully:', createdWidget);
-        
-        // Force refresh to ensure the new widget appears immediately
-        await refreshNotes();
       } catch (error) {
         console.error('Failed to create widget:', error);
         const friendlyError = createUserFriendlyError('Failed to create widget. Please try again.');
         toast.error(friendlyError.message);
       }
     }
-  }, [createNote, createWidget, boardId, refreshNotes]);
+  }, [createNote, createWidget, boardId]);
 
   const handleUpdateWidget = useCallback(async (widgetId: string, updatedContent: string) => {
     // Check if it's a note widget (from database)
@@ -192,6 +185,8 @@ export const useBoardData = (boardId: string) => {
     const roundedX = Math.round(x);
     const roundedY = Math.round(y);
 
+    console.log('Position change request:', widgetId, 'from UI to:', { x, y }, 'rounded to:', { roundedX, roundedY });
+
     // Validate position bounds
     if (roundedX < -1000 || roundedX > 10000 || roundedY < -1000 || roundedY > 10000) {
       const error = createUserFriendlyError('Widget position is out of bounds.');
@@ -204,7 +199,9 @@ export const useBoardData = (boardId: string) => {
     
     if (isNote) {
       try {
+        console.log('Updating database note position');
         await updateNotePosition(widgetId, roundedX, roundedY);
+        console.log('Database note position updated successfully');
       } catch (error) {
         console.error('Failed to update note position:', error);
         const friendlyError = createUserFriendlyError('Failed to move note. Please try again.');
@@ -212,6 +209,7 @@ export const useBoardData = (boardId: string) => {
       }
     } else {
       // Handle image widgets locally
+      console.log('Updating local widget position');
       setImageWidgets(prev => prev.map(widget =>
         widget.id === widgetId
           ? { ...widget, position: { x: roundedX, y: roundedY }, updatedAt: new Date() }

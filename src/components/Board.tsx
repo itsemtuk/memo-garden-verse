@@ -52,9 +52,9 @@ const Board = ({ boardId, onUpdate }: BoardProps) => {
     }
   }, [widgets, onUpdate]);
 
-  // Force re-render when widgets change to ensure new widgets appear immediately
+  // Log widget changes for debugging
   useEffect(() => {
-    console.log('Widgets updated in Board component:', widgets.length);
+    console.log('Board widgets updated - count:', widgets.length, 'widgets:', widgets.map(w => ({ id: w.id, type: w.type, position: w.position })));
   }, [widgets]);
 
   const sensors = useSensors(
@@ -78,10 +78,11 @@ const Board = ({ boardId, onUpdate }: BoardProps) => {
     const newX = widget.position.x + delta.x;
     const newY = widget.position.y + delta.y;
 
-    console.log('Dragging widget:', widgetId, 'to position:', { newX, newY });
+    console.log('Drag end - widget:', widgetId, 'current position:', widget.position, 'delta:', delta, 'new position:', { newX, newY });
 
     try {
       await handleWidgetPositionChange(widgetId, newX, newY);
+      console.log('Widget position updated successfully');
     } catch (error) {
       console.error('Failed to update widget position:', error);
     }

@@ -27,6 +27,7 @@ export const useNotes = (boardId: string) => {
   const fetchNotes = useCallback(async () => {
     try {
       setLoading(true);
+      console.log('Fetching notes for board:', boardId);
       const { data, error } = await supabase
         .from('notes')
         .select('*')
@@ -34,6 +35,7 @@ export const useNotes = (boardId: string) => {
         .order('created_at', { ascending: true });
 
       if (error) throw error;
+      console.log('Fetched notes:', data?.length || 0);
       setNotes(data || []);
     } catch (err) {
       console.error('Error fetching notes:', err);
@@ -46,13 +48,14 @@ export const useNotes = (boardId: string) => {
   // Create a new widget
   const createWidget = useCallback(async (widgetData: CreateWidgetData) => {
     try {
+      console.log('Creating widget:', widgetData);
       const { data, error } = await supabase
         .from('notes')
         .insert({
           board_id: boardId,
           content: widgetData.content,
-          x: widgetData.x,
-          y: widgetData.y,
+          x: Math.round(widgetData.x), // Ensure integer
+          y: Math.round(widgetData.y), // Ensure integer
           widget_type: widgetData.type,
           widget_settings: widgetData.settings || {},
           rotation: Math.floor(Math.random() * 6) - 3, // Random rotation between -3 and 3
@@ -61,6 +64,11 @@ export const useNotes = (boardId: string) => {
         .single();
 
       if (error) throw error;
+      console.log('Widget created in database:', data);
+      
+      // Immediately add to local state for instant feedback
+      setNotes(prev => [...prev, data]);
+      
       return data;
     } catch (err) {
       console.error('Error creating widget:', err);
@@ -73,20 +81,41 @@ export const useNotes = (boardId: string) => {
     return createWidget({
       type: 'note',
       content,
-      x,
-      y,
+      x: Math.round(x), // Ensure integer
+      y: Math.round(y), // Ensure integer
     });
   }, [createWidget]);
 
   // Update note position
   const updateNotePosition = useCallback(async (noteId: string, x: number, y: number) => {
     try {
+      const roundedX = Math.round(x);
+      const roundedY = Math.round(y);
+      
+      console.log('Updating note position:', noteId, 'to', { roundedX, roundedY });
+      
       const { error } = await supabase
         .from('notes')
-        .update({ x, y, updated_at: new Date().toISOString() })
+        .update({ 
+          x: roundedX, 
+          y: roundedY, 
+          updated_at: new Date().toISOString() 
+        })
         .eq('id', noteId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database error updating position:', error);
+        throw error;
+      }
+
+      // Optimistically update local state
+      setNotes(prev => prev.map(note => 
+        note.id === noteId 
+          ? { ...note, x: roundedX, y: roundedY, updated_at: new Date().toISOString() }
+          : note
+      ));
+      
+      console.log('Position updated successfully');
     } catch (err) {
       console.error('Error updating note position:', err);
       throw err;
@@ -145,33 +174,51 @@ export const useNotes = (boardId: string) => {
   useEffect(() => {
     fetchNotes();
 
+    console.log('Setting up real-time subscription for board:', boardId);
     const channel = supabase
-      .channel(`notes-${boardId}`)
+      .channel(`notes-changes-${boardId}`)
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
         table: 'notes',
         filter: `board_id=eq.${boardId}`
       }, (payload) => {
-        console.log('Real-time note update:', payload);
+        console.log('Real-time note update received:', payload.eventType, payload);
         
         switch (payload.eventType) {
           case 'INSERT':
-            setNotes(prev => [...prev, payload.new as Note]);
+            setNotes(prev => {
+              const exists = prev.some(note => note.id === payload.new.id);
+              if (exists) {
+                console.log('Note already exists, skipping insert');
+                return prev;
+              }
+              console.log('Adding new note to state');
+              return [...prev, payload.new as Note];
+            });
             break;
           case 'UPDATE':
-            setNotes(prev => prev.map(note => 
-              note.id === payload.new.id ? payload.new as Note : note
-            ));
+            setNotes(prev => {
+              console.log('Updating note in state:', payload.new.id);
+              return prev.map(note => 
+                note.id === payload.new.id ? payload.new as Note : note
+              );
+            });
             break;
           case 'DELETE':
-            setNotes(prev => prev.filter(note => note.id !== payload.old.id));
+            setNotes(prev => {
+              console.log('Removing note from state:', payload.old.id);
+              return prev.filter(note => note.id !== payload.old.id);
+            });
             break;
         }
       })
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Subscription status:', status);
+      });
 
     return () => {
+      console.log('Cleaning up real-time subscription');
       supabase.removeChannel(channel);
     };
   }, [boardId, fetchNotes]);
