@@ -3,6 +3,12 @@ import { Widget } from '@/types';
 import { CreateWidgetData } from '@/types/widget';
 import { useNotes } from './useNotes';
 
+// Helper function to validate UUID format
+const isValidUUID = (str: string) => {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(str);
+};
+
 export const useBoardData = (boardId: string) => {
   const {
     notesAsWidgets,
@@ -22,6 +28,14 @@ export const useBoardData = (boardId: string) => {
 
   const handleAddWidget = useCallback(async (widget: Widget) => {
     console.log('handleAddWidget called with:', widget);
+    console.log('Board ID:', boardId, 'Is valid UUID:', isValidUUID(boardId));
+    
+    // Validate board ID format
+    if (!isValidUUID(boardId)) {
+      console.error('Invalid board ID format:', boardId);
+      console.error('Board ID must be a valid UUID format');
+      return;
+    }
     
     if (widget.type === 'note') {
       try {
@@ -57,7 +71,7 @@ export const useBoardData = (boardId: string) => {
         console.error('Failed to create widget:', error);
       }
     }
-  }, [createNote, createWidget]);
+  }, [createNote, createWidget, boardId]);
 
   const handleUpdateWidget = useCallback(async (widgetId: string, updatedContent: string) => {
     // Check if it's a note widget (from database)
