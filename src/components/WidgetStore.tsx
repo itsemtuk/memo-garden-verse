@@ -1,16 +1,20 @@
-import { useState } from "react";
+
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Widget, WidgetType } from "@/types";
 import { v4 as uuidv4 } from "uuid";
 import { useFileUpload } from "@/hooks/useFileUpload";
 import { 
   Cloud, Leaf, ShoppingCart, StickyNote, Image, Plus, Calendar, 
   ListTodo, FileText, Timer, Target, Newspaper, Quote, Smile,
-  Bookmark, File, Music, ChefHat, Activity, Clock
+  Bookmark, File, Music, ChefHat, Activity, Clock, Brush,
+  DollarSign, ArrowUpDown, Globe, MapPin, Receipt, Users,
+  Rss, BookOpen, GraduationCap, Search, Filter
 } from "lucide-react";
 import { 
   noteContentSchema, 
@@ -30,6 +34,8 @@ interface WidgetStoreProps {
 const WidgetStore = ({ onAddWidget, centerPosition, boardId }: WidgetStoreProps) => {
   const [open, setOpen] = useState(false);
   const [selectedWidget, setSelectedWidget] = useState<WidgetType | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
   const [formData, setFormData] = useState({
     noteContent: "",
     imageUrl: "",
@@ -60,157 +66,302 @@ const WidgetStore = ({ onAddWidget, centerPosition, boardId }: WidgetStoreProps)
     });
     setErrors({});
     setSelectedWidget(null);
+    setSearchQuery("");
+    setSelectedCategory("all");
   };
 
   const widgetTypes = [
+    // Productivity
     { 
       id: "note" as WidgetType, 
       label: "Sticky Note", 
       icon: StickyNote,
       description: "Add quick notes and reminders",
-      color: "bg-yellow-100 hover:bg-yellow-200"
-    },
-    { 
-      id: "image" as WidgetType, 
-      label: "Image", 
-      icon: Image,
-      description: "Upload or link images",
-      color: "bg-blue-100 hover:bg-blue-200"
-    },
-    { 
-      id: "weather" as WidgetType, 
-      label: "Weather", 
-      icon: Cloud,
-      description: "Display weather information",
-      color: "bg-sky-100 hover:bg-sky-200"
-    },
-    { 
-      id: "plant_reminder" as WidgetType, 
-      label: "Plant Care", 
-      icon: Leaf,
-      description: "Track plant watering schedules",
-      color: "bg-green-100 hover:bg-green-200"
-    },
-    { 
-      id: "shopping_list" as WidgetType, 
-      label: "Shopping List", 
-      icon: ShoppingCart,
-      description: "Keep track of items to buy",
-      color: "bg-purple-100 hover:bg-purple-200"
-    },
-    { 
-      id: "calendar" as WidgetType, 
-      label: "Calendar", 
-      icon: Calendar,
-      description: "Schedule and manage events",
-      color: "bg-indigo-100 hover:bg-indigo-200"
+      color: "bg-yellow-100 hover:bg-yellow-200",
+      category: "productivity"
     },
     { 
       id: "todo_list" as WidgetType, 
       label: "Todo List", 
       icon: ListTodo,
       description: "Track tasks and to-dos",
-      color: "bg-green-100 hover:bg-green-200"
+      color: "bg-green-100 hover:bg-green-200",
+      category: "productivity"
     },
     { 
-      id: "rich_text" as WidgetType, 
-      label: "Rich Text", 
-      icon: FileText,
-      description: "Formatted notes with styling",
-      color: "bg-blue-100 hover:bg-blue-200"
+      id: "calendar" as WidgetType, 
+      label: "Calendar", 
+      icon: Calendar,
+      description: "Schedule and manage events",
+      color: "bg-indigo-100 hover:bg-indigo-200",
+      category: "productivity"
     },
     { 
       id: "timer" as WidgetType, 
       label: "Timer", 
       icon: Timer,
       description: "Pomodoro and focus timer",
-      color: "bg-red-100 hover:bg-red-200"
+      color: "bg-red-100 hover:bg-red-200",
+      category: "productivity"
     },
     { 
-      id: "habit_tracker" as WidgetType, 
-      label: "Habit Tracker", 
-      icon: Target,
-      description: "Track daily habits",
-      color: "bg-green-100 hover:bg-green-200"
-    },
-    { 
-      id: "news_feed" as WidgetType, 
-      label: "News Feed", 
-      icon: Newspaper,
-      description: "Latest news and updates",
-      color: "bg-gray-100 hover:bg-gray-200"
-    },
-    { 
-      id: "quotes" as WidgetType, 
-      label: "Daily Quotes", 
-      icon: Quote,
-      description: "Inspirational quotes",
-      color: "bg-purple-100 hover:bg-purple-200"
-    },
-    { 
-      id: "mood_tracker" as WidgetType, 
-      label: "Mood Tracker", 
-      icon: Smile,
-      description: "Log and visualize daily moods",
-      color: "bg-pink-100 hover:bg-pink-200"
-    },
-    { 
-      id: "goal_tracker" as WidgetType, 
-      label: "Goal Tracker", 
-      icon: Target,
-      description: "Set and monitor progress toward goals",
-      color: "bg-blue-100 hover:bg-blue-200"
-    },
-    { 
-      id: "bookmark_manager" as WidgetType, 
-      label: "Bookmark Manager", 
-      icon: Bookmark,
-      description: "Save and organize useful links",
-      color: "bg-orange-100 hover:bg-orange-200"
-    },
-    { 
-      id: "file_attachment" as WidgetType, 
-      label: "File Attachments", 
-      icon: File,
-      description: "Upload and preview documents",
-      color: "bg-gray-100 hover:bg-gray-200"
-    },
-    { 
-      id: "music_player" as WidgetType, 
-      label: "Music Player", 
-      icon: Music,
-      description: "Embed music or playlists",
-      color: "bg-purple-100 hover:bg-purple-200"
-    },
-    { 
-      id: "recipe_planner" as WidgetType, 
-      label: "Recipe Planner", 
-      icon: ChefHat,
-      description: "Plan meals or store favorite recipes",
-      color: "bg-orange-100 hover:bg-orange-200"
-    },
-    { 
-      id: "fitness_tracker" as WidgetType, 
-      label: "Fitness Tracker", 
-      icon: Activity,
-      description: "Log workouts and track fitness goals",
-      color: "bg-green-100 hover:bg-green-200"
-    },
-    { 
-      id: "weather_extended" as WidgetType, 
-      label: "Extended Weather", 
-      icon: Cloud,
-      description: "Multi-day weather forecast",
-      color: "bg-sky-100 hover:bg-sky-200"
+      id: "rich_text" as WidgetType, 
+      label: "Rich Text", 
+      icon: FileText,
+      description: "Formatted notes with styling",
+      color: "bg-blue-100 hover:bg-blue-200",
+      category: "productivity"
     },
     { 
       id: "countdown_timer" as WidgetType, 
       label: "Countdown Timer", 
       icon: Clock,
       description: "Track time to important dates",
-      color: "bg-red-100 hover:bg-red-200"
+      color: "bg-red-100 hover:bg-red-200",
+      category: "productivity"
+    },
+    
+    // Media & Content
+    { 
+      id: "image" as WidgetType, 
+      label: "Image", 
+      icon: Image,
+      description: "Upload or link images",
+      color: "bg-blue-100 hover:bg-blue-200",
+      category: "media"
+    },
+    { 
+      id: "music_player" as WidgetType, 
+      label: "Music Player", 
+      icon: Music,
+      description: "Embed music or playlists",
+      color: "bg-purple-100 hover:bg-purple-200",
+      category: "media"
+    },
+    { 
+      id: "file_attachment" as WidgetType, 
+      label: "File Attachments", 
+      icon: File,
+      description: "Upload and preview documents",
+      color: "bg-gray-100 hover:bg-gray-200",
+      category: "media"
+    },
+    { 
+      id: "whiteboard" as WidgetType, 
+      label: "Whiteboard", 
+      icon: Brush,
+      description: "Free-form drawing and sketching",
+      color: "bg-purple-100 hover:bg-purple-200",
+      category: "media"
+    },
+    
+    // Information & News
+    { 
+      id: "weather" as WidgetType, 
+      label: "Weather", 
+      icon: Cloud,
+      description: "Display weather information",
+      color: "bg-sky-100 hover:bg-sky-200",
+      category: "information"
+    },
+    { 
+      id: "weather_extended" as WidgetType, 
+      label: "Extended Weather", 
+      icon: Cloud,
+      description: "Multi-day weather forecast",
+      color: "bg-sky-100 hover:bg-sky-200",
+      category: "information"
+    },
+    { 
+      id: "news_feed" as WidgetType, 
+      label: "News Feed", 
+      icon: Newspaper,
+      description: "Latest news and updates",
+      color: "bg-gray-100 hover:bg-gray-200",
+      category: "information"
+    },
+    { 
+      id: "news_headlines" as WidgetType, 
+      label: "News Headlines", 
+      icon: Rss,
+      description: "Quick news flashes",
+      color: "bg-gray-100 hover:bg-gray-200",
+      category: "information"
+    },
+    { 
+      id: "quotes" as WidgetType, 
+      label: "Daily Quotes", 
+      icon: Quote,
+      description: "Inspirational quotes",
+      color: "bg-purple-100 hover:bg-purple-200",
+      category: "information"
+    },
+    { 
+      id: "stock_ticker" as WidgetType, 
+      label: "Stock Ticker", 
+      icon: DollarSign,
+      description: "Track financial data",
+      color: "bg-green-100 hover:bg-green-200",
+      category: "information"
+    },
+    
+    // Health & Lifestyle
+    { 
+      id: "plant_reminder" as WidgetType, 
+      label: "Plant Care", 
+      icon: Leaf,
+      description: "Track plant watering schedules",
+      color: "bg-green-100 hover:bg-green-200",
+      category: "lifestyle"
+    },
+    { 
+      id: "habit_tracker" as WidgetType, 
+      label: "Habit Tracker", 
+      icon: Target,
+      description: "Track daily habits",
+      color: "bg-green-100 hover:bg-green-200",
+      category: "lifestyle"
+    },
+    { 
+      id: "mood_tracker" as WidgetType, 
+      label: "Mood Tracker", 
+      icon: Smile,
+      description: "Log and visualize daily moods",
+      color: "bg-pink-100 hover:bg-pink-200",
+      category: "lifestyle"
+    },
+    { 
+      id: "fitness_tracker" as WidgetType, 
+      label: "Fitness Tracker", 
+      icon: Activity,
+      description: "Log workouts and track fitness goals",
+      color: "bg-green-100 hover:bg-green-200",
+      category: "lifestyle"
+    },
+    { 
+      id: "recipe_planner" as WidgetType, 
+      label: "Recipe Planner", 
+      icon: ChefHat,
+      description: "Plan meals or store favorite recipes",
+      color: "bg-orange-100 hover:bg-orange-200",
+      category: "lifestyle"
+    },
+    
+    // Organization & Planning
+    { 
+      id: "shopping_list" as WidgetType, 
+      label: "Shopping List", 
+      icon: ShoppingCart,
+      description: "Keep track of items to buy",
+      color: "bg-purple-100 hover:bg-purple-200",
+      category: "organization"
+    },
+    { 
+      id: "goal_tracker" as WidgetType, 
+      label: "Goal Tracker", 
+      icon: Target,
+      description: "Set and monitor progress toward goals",
+      color: "bg-blue-100 hover:bg-blue-200",
+      category: "organization"
+    },
+    { 
+      id: "bookmark_manager" as WidgetType, 
+      label: "Bookmark Manager", 
+      icon: Bookmark,
+      description: "Save and organize useful links",
+      color: "bg-orange-100 hover:bg-orange-200",
+      category: "organization"
+    },
+    { 
+      id: "travel_planner" as WidgetType, 
+      label: "Travel Planner", 
+      icon: MapPin,
+      description: "Organize trips and itineraries",
+      color: "bg-blue-100 hover:bg-blue-200",
+      category: "organization"
+    },
+    { 
+      id: "expense_tracker" as WidgetType, 
+      label: "Expense Tracker", 
+      icon: Receipt,
+      description: "Monitor spending or group expenses",
+      color: "bg-red-100 hover:bg-red-200",
+      category: "organization"
+    },
+    { 
+      id: "contact_list" as WidgetType, 
+      label: "Contact List", 
+      icon: Users,
+      description: "Store team or personal contacts",
+      color: "bg-gray-100 hover:bg-gray-200",
+      category: "organization"
+    },
+    
+    // Tools & Utilities
+    { 
+      id: "currency_converter" as WidgetType, 
+      label: "Currency Converter", 
+      icon: ArrowUpDown,
+      description: "Quick currency calculations",
+      color: "bg-green-100 hover:bg-green-200",
+      category: "tools"
+    },
+    { 
+      id: "translator" as WidgetType, 
+      label: "Language Translator", 
+      icon: Globe,
+      description: "Translate snippets or notes",
+      color: "bg-blue-100 hover:bg-blue-200",
+      category: "tools"
+    },
+    
+    // Learning & Social
+    { 
+      id: "book_tracker" as WidgetType, 
+      label: "Book Tracker", 
+      icon: BookOpen,
+      description: "Track books and reading progress",
+      color: "bg-orange-100 hover:bg-orange-200",
+      category: "learning"
+    },
+    { 
+      id: "flashcards" as WidgetType, 
+      label: "Flashcards", 
+      icon: GraduationCap,
+      description: "Study aids for memorization",
+      color: "bg-purple-100 hover:bg-purple-200",
+      category: "learning"
+    },
+    { 
+      id: "social_media_feed" as WidgetType, 
+      label: "Social Media Feed", 
+      icon: Rss,
+      description: "Embed Twitter, Instagram, or other feeds",
+      color: "bg-blue-100 hover:bg-blue-200",
+      category: "social"
     },
   ];
+
+  const categories = [
+    { value: "all", label: "All Widgets" },
+    { value: "productivity", label: "Productivity" },
+    { value: "media", label: "Media & Content" },
+    { value: "information", label: "Information & News" },
+    { value: "lifestyle", label: "Health & Lifestyle" },
+    { value: "organization", label: "Organization & Planning" },
+    { value: "tools", label: "Tools & Utilities" },
+    { value: "learning", label: "Learning & Education" },
+    { value: "social", label: "Social" },
+  ];
+
+  const filteredWidgets = useMemo(() => {
+    return widgetTypes.filter(widget => {
+      const matchesSearch = widget.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          widget.description.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory = selectedCategory === "all" || widget.category === selectedCategory;
+      return matchesSearch && matchesCategory;
+    });
+  }, [searchQuery, selectedCategory]);
 
   const handleAddWidget = async () => {
     if (!selectedWidget) return;
@@ -302,297 +453,19 @@ const WidgetStore = ({ onAddWidget, centerPosition, boardId }: WidgetStoreProps)
           clearError('plant');
           break;
 
-        case "shopping_list":
+        // For all other widgets that don't need special form handling
+        default:
           newWidget = {
             id: uuidv4(),
-            type: "shopping_list",
-            content: "shopping_list",
-            position: {
-              x: centerPosition.x - 110,
-              y: centerPosition.y - 140,
-            },
-            rotation: randomRotation,
-            size: { width: 220, height: 280 },
-            settings: { items: [] },
-            createdAt: now,
-            updatedAt: now,
-          };
-          break;
-
-        case "calendar":
-          newWidget = {
-            id: uuidv4(),
-            type: "calendar",
-            content: "calendar",
-            position: {
-              x: centerPosition.x - 140,
-              y: centerPosition.y - 160,
-            },
-            rotation: randomRotation,
-            size: { width: 280, height: 320 },
-            settings: { events: [] },
-            createdAt: now,
-            updatedAt: now,
-          };
-          break;
-
-        case "todo_list":
-          newWidget = {
-            id: uuidv4(),
-            type: "todo_list",
-            content: "todo_list",
-            position: {
-              x: centerPosition.x - 130,
-              y: centerPosition.y - 150,
-            },
-            rotation: randomRotation,
-            size: { width: 260, height: 300 },
-            settings: { todos: [] },
-            createdAt: now,
-            updatedAt: now,
-          };
-          break;
-
-        case "rich_text":
-          newWidget = {
-            id: uuidv4(),
-            type: "rich_text",
-            content: "rich_text",
-            position: {
-              x: centerPosition.x - 160,
-              y: centerPosition.y - 120,
-            },
-            rotation: randomRotation,
-            size: { width: 320, height: 240 },
-            settings: { content: "" },
-            createdAt: now,
-            updatedAt: now,
-          };
-          break;
-
-        case "timer":
-          newWidget = {
-            id: uuidv4(),
-            type: "timer",
-            content: "timer",
-            position: {
-              x: centerPosition.x - 100,
-              y: centerPosition.y - 120,
-            },
-            rotation: randomRotation,
-            size: { width: 200, height: 240 },
-            settings: { duration: 1500 },
-            createdAt: now,
-            updatedAt: now,
-          };
-          break;
-
-        case "habit_tracker":
-          newWidget = {
-            id: uuidv4(),
-            type: "habit_tracker",
-            content: "habit_tracker",
-            position: {
-              x: centerPosition.x - 140,
-              y: centerPosition.y - 160,
-            },
-            rotation: randomRotation,
-            size: { width: 280, height: 320 },
-            settings: { habits: [] },
-            createdAt: now,
-            updatedAt: now,
-          };
-          break;
-
-        case "news_feed":
-          newWidget = {
-            id: uuidv4(),
-            type: "news_feed",
-            content: "news_feed",
+            type: selectedWidget,
+            content: selectedWidget,
             position: {
               x: centerPosition.x - 160,
               y: centerPosition.y - 140,
             },
             rotation: randomRotation,
             size: { width: 320, height: 280 },
-            settings: { news: [] },
-            createdAt: now,
-            updatedAt: now,
-          };
-          break;
-
-        case "quotes":
-          newWidget = {
-            id: uuidv4(),
-            type: "quotes",
-            content: "quotes",
-            position: {
-              x: centerPosition.x - 150,
-              y: centerPosition.y - 100,
-            },
-            rotation: randomRotation,
-            size: { width: 300, height: 200 },
             settings: {},
-            createdAt: now,
-            updatedAt: now,
-          };
-          break;
-
-        case "mood_tracker":
-          newWidget = {
-            id: uuidv4(),
-            type: "mood_tracker",
-            content: "mood_tracker",
-            position: {
-              x: centerPosition.x - 140,
-              y: centerPosition.y - 160,
-            },
-            rotation: randomRotation,
-            size: { width: 280, height: 320 },
-            settings: { moods: [] },
-            createdAt: now,
-            updatedAt: now,
-          };
-          break;
-
-        case "goal_tracker":
-          newWidget = {
-            id: uuidv4(),
-            type: "goal_tracker",
-            content: "goal_tracker",
-            position: {
-              x: centerPosition.x - 150,
-              y: centerPosition.y - 175,
-            },
-            rotation: randomRotation,
-            size: { width: 300, height: 350 },
-            settings: { goals: [] },
-            createdAt: now,
-            updatedAt: now,
-          };
-          break;
-
-        case "bookmark_manager":
-          newWidget = {
-            id: uuidv4(),
-            type: "bookmark_manager",
-            content: "bookmark_manager",
-            position: {
-              x: centerPosition.x - 160,
-              y: centerPosition.y - 200,
-            },
-            rotation: randomRotation,
-            size: { width: 320, height: 400 },
-            settings: { bookmarks: [] },
-            createdAt: now,
-            updatedAt: now,
-          };
-          break;
-
-        case "file_attachment":
-          newWidget = {
-            id: uuidv4(),
-            type: "file_attachment",
-            content: "file_attachment",
-            position: {
-              x: centerPosition.x - 160,
-              y: centerPosition.y - 175,
-            },
-            rotation: randomRotation,
-            size: { width: 320, height: 350 },
-            settings: { files: [] },
-            createdAt: now,
-            updatedAt: now,
-          };
-          break;
-
-        case "music_player":
-          newWidget = {
-            id: uuidv4(),
-            type: "music_player",
-            content: "music_player",
-            position: {
-              x: centerPosition.x - 150,
-              y: centerPosition.y - 125,
-            },
-            rotation: randomRotation,
-            size: { width: 300, height: 250 },
-            settings: { playlist: [], volume: [50] },
-            createdAt: now,
-            updatedAt: now,
-          };
-          break;
-
-        case "recipe_planner":
-          newWidget = {
-            id: uuidv4(),
-            type: "recipe_planner",
-            content: "recipe_planner",
-            position: {
-              x: centerPosition.x - 160,
-              y: centerPosition.y - 200,
-            },
-            rotation: randomRotation,
-            size: { width: 320, height: 400 },
-            settings: { recipes: [] },
-            createdAt: now,
-            updatedAt: now,
-          };
-          break;
-
-        case "fitness_tracker":
-          newWidget = {
-            id: uuidv4(),
-            type: "fitness_tracker",
-            content: "fitness_tracker",
-            position: {
-              x: centerPosition.x - 150,
-              y: centerPosition.y - 175,
-            },
-            rotation: randomRotation,
-            size: { width: 300, height: 350 },
-            settings: { 
-              workouts: [],
-              dailyGoals: {
-                steps: { current: 0, target: 10000 },
-                calories: { current: 0, target: 2000 },
-                water: { current: 0, target: 8 }
-              }
-            },
-            createdAt: now,
-            updatedAt: now,
-          };
-          break;
-
-        case "weather_extended":
-          newWidget = {
-            id: uuidv4(),
-            type: "weather_extended",
-            content: "weather_extended",
-            position: {
-              x: centerPosition.x - 160,
-              y: centerPosition.y - 140,
-            },
-            rotation: randomRotation,
-            size: { width: 320, height: 280 },
-            settings: { location: "Default City" },
-            createdAt: now,
-            updatedAt: now,
-          };
-          break;
-
-        case "countdown_timer":
-          newWidget = {
-            id: uuidv4(),
-            type: "countdown_timer",
-            content: "countdown_timer",
-            position: {
-              x: centerPosition.x - 150,
-              y: centerPosition.y - 175,
-            },
-            rotation: randomRotation,
-            size: { width: 300, height: 350 },
-            settings: { countdowns: [] },
             createdAt: now,
             updatedAt: now,
           };
@@ -639,8 +512,8 @@ const WidgetStore = ({ onAddWidget, centerPosition, boardId }: WidgetStoreProps)
   const renderWidgetForm = () => {
     if (!selectedWidget) return null;
 
-    // For new widgets that don't need forms, show simple info
-    if (['calendar', 'todo_list', 'rich_text', 'timer', 'habit_tracker', 'news_feed', 'quotes', 'mood_tracker', 'goal_tracker', 'bookmark_manager', 'file_attachment', 'music_player', 'recipe_planner', 'fitness_tracker', 'weather_extended', 'countdown_timer'].includes(selectedWidget)) {
+    // For widgets that don't need forms, show simple info
+    if (!['note', 'image', 'weather', 'plant_reminder'].includes(selectedWidget)) {
       const widgetInfo = widgetTypes.find(w => w.id === selectedWidget);
       const Icon = widgetInfo?.icon || StickyNote;
       
@@ -781,17 +654,6 @@ const WidgetStore = ({ onAddWidget, centerPosition, boardId }: WidgetStoreProps)
           </div>
         );
 
-      case "shopping_list":
-        return (
-          <div className="space-y-4">
-            <div className="text-center text-gray-600">
-              <ShoppingCart className="w-12 h-12 mx-auto mb-2 text-purple-500" />
-              <p className="font-medium">Shopping List Widget</p>
-              <p className="text-sm">Create a new shopping list to keep track of items you need to buy.</p>
-            </div>
-          </div>
-        );
-
       default:
         return null;
     }
@@ -807,27 +669,8 @@ const WidgetStore = ({ onAddWidget, centerPosition, boardId }: WidgetStoreProps)
         return formData.weatherLocation.trim().length > 0;
       case "plant_reminder":
         return formData.plantName.trim().length > 0;
-      case "shopping_list":
-        return true;
-      case "calendar":
-      case "todo_list":
-      case "rich_text":
-      case "timer":
-      case "habit_tracker":
-      case "news_feed":
-      case "quotes":
-      case "mood_tracker":
-      case "goal_tracker":
-      case "bookmark_manager":
-      case "file_attachment":
-      case "music_player":
-      case "recipe_planner":
-      case "fitness_tracker":
-      case "weather_extended":
-      case "countdown_timer":
-        return true;
       default:
-        return false;
+        return true;
     }
   };
 
@@ -851,28 +694,72 @@ const WidgetStore = ({ onAddWidget, centerPosition, boardId }: WidgetStoreProps)
         
         <div className="mt-6 space-y-4">
           {!selectedWidget ? (
-            <div className="grid gap-3">
-              {widgetTypes.map((widget) => {
-                const Icon = widget.icon;
-                return (
-                  <button
-                    key={widget.id}
-                    onClick={() => setSelectedWidget(widget.id)}
-                    className={`p-4 rounded-lg border-2 border-transparent hover:border-garden-primary transition-all ${widget.color} text-left`}
-                  >
-                    <div className="flex items-start space-x-3">
-                      <div className="flex-shrink-0">
-                        <Icon className="w-8 h-8 text-gray-700" />
-                      </div>
-                      <div>
-                        <h3 className="font-medium text-gray-900">{widget.label}</h3>
-                        <p className="text-sm text-gray-600 mt-1">{widget.description}</p>
-                      </div>
+            <>
+              {/* Search and Filter Controls */}
+              <div className="space-y-3">
+                <div className="relative">
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    placeholder="Search widgets..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <Filter className="h-4 w-4 text-gray-500" />
+                  <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories.map(category => (
+                        <SelectItem key={category.value} value={category.value}>
+                          {category.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Widget Grid */}
+              <ScrollArea className="h-[600px]">
+                <div className="grid gap-3 pr-4">
+                  {filteredWidgets.map((widget) => {
+                    const Icon = widget.icon;
+                    return (
+                      <button
+                        key={widget.id}
+                        onClick={() => setSelectedWidget(widget.id)}
+                        className={`p-4 rounded-lg border-2 border-transparent hover:border-garden-primary transition-all ${widget.color} text-left`}
+                      >
+                        <div className="flex items-start space-x-3">
+                          <div className="flex-shrink-0">
+                            <Icon className="w-8 h-8 text-gray-700" />
+                          </div>
+                          <div>
+                            <h3 className="font-medium text-gray-900">{widget.label}</h3>
+                            <p className="text-sm text-gray-600 mt-1">{widget.description}</p>
+                            <span className="text-xs text-gray-500 mt-1 block capitalize">
+                              {widget.category}
+                            </span>
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                  
+                  {filteredWidgets.length === 0 && (
+                    <div className="text-center py-8 text-gray-500">
+                      <Search className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                      <p>No widgets found matching your search.</p>
                     </div>
-                  </button>
-                );
-              })}
-            </div>
+                  )}
+                </div>
+              </ScrollArea>
+            </>
           ) : (
             <div className="space-y-4">
               <div className="flex items-center space-x-2">

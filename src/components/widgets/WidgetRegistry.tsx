@@ -21,6 +21,9 @@ import RecipePlannerWidget from "./RecipePlannerWidget";
 import FitnessTrackerWidget from "./FitnessTrackerWidget";
 import WeatherExtendedWidget from "./WeatherExtendedWidget";
 import CountdownTimerWidget from "./CountdownTimerWidget";
+import WhiteboardWidget from "./WhiteboardWidget";
+import StockTickerWidget from "./StockTickerWidget";
+import CurrencyConverterWidget from "./CurrencyConverterWidget";
 
 interface WidgetRendererProps {
   widget: Widget;
@@ -52,7 +55,19 @@ const widgetRegistry = {
   fitness_tracker: FitnessTrackerWidget,
   weather_extended: WeatherExtendedWidget,
   countdown_timer: CountdownTimerWidget,
+  whiteboard: WhiteboardWidget,
+  stock_ticker: StockTickerWidget,
+  currency_converter: CurrencyConverterWidget,
   social: NoteWidget, // Placeholder for now
+  // Placeholders for new widgets that need implementation
+  translator: NoteWidget,
+  travel_planner: NoteWidget,
+  expense_tracker: NoteWidget,
+  contact_list: NoteWidget,
+  social_media_feed: NoteWidget,
+  book_tracker: NoteWidget,
+  flashcards: NoteWidget,
+  news_headlines: NoteWidget,
 };
 
 export const WidgetRenderer = ({ widget, isSelected, onClick, onUpdate, onUpdateSettings }: WidgetRendererProps) => {

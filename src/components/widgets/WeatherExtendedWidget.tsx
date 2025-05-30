@@ -3,7 +3,7 @@ import { Widget } from "@/types";
 import { useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import { useState, useEffect } from "react";
-import { Cloud, Sun, CloudRain, Snow } from "lucide-react";
+import { Cloud, Sun, CloudRain } from "lucide-react";
 
 interface WeatherExtendedWidgetProps {
   widget: Widget;
