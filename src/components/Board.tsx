@@ -1,13 +1,13 @@
-import { WidgetRenderer } from "@/components/widgets/WidgetRegistry";
 import WidgetStore from "@/components/WidgetStore";
 import { Widget } from "@/types";
-import { DndContext, DragEndEvent, DragStartEvent, DragMoveEvent, PointerSensor, TouchSensor, useSensor, useSensors } from "@dnd-kit/core";
+import { DragEndEvent, DragStartEvent, DragMoveEvent, PointerSensor, TouchSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useBoardData } from "@/hooks/useBoardData";
 import { usePresence } from "@/hooks/usePresence";
 import { Trash2, MoveUp, MoveDown, Plus, RotateCw } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import CursorDisplay from "@/components/collaboration/CursorDisplay";
+import VirtualizedBoard from "@/components/VirtualizedBoard";
 import { 
   Drawer,
   DrawerContent,
@@ -221,14 +221,11 @@ const Board = ({ boardId, onUpdate }: BoardProps) => {
     );
   }
 
-  // Sort widgets by z-index for proper rendering order
-  const sortedWidgets = [...widgets].sort((a, b) => (a.settings?.zIndex || 0) - (b.settings?.zIndex || 0));
-
-  console.log('Rendering board with widgets:', sortedWidgets.length);
+  console.log('Rendering board with widgets:', widgets.length);
 
   return (
     <div 
-      className={`cork-board board-canvas relative w-full overflow-auto select-none ${
+      className={`relative w-full ${
         isMobile 
           ? 'h-[calc(100vh-56px)] touch-pan-x touch-pan-y' 
           : 'h-[calc(100vh-64px)]'
@@ -236,31 +233,21 @@ const Board = ({ boardId, onUpdate }: BoardProps) => {
       onClick={handleBoardClick}
       ref={boardRef}
     >
-      <DndContext 
-        sensors={sensors} 
+      <VirtualizedBoard
+        widgets={widgets}
+        selectedWidgetId={selectedWidgetId}
+        sensors={sensors}
         onDragStart={handleDragStart}
         onDragMove={handleDragMove}
         onDragEnd={handleDragEnd}
-      >
-        {sortedWidgets.map((widget) => {
-          console.log('Rendering widget:', widget.id, widget.type, widget.position);
-          return (
-            <WidgetRenderer
-              key={`${widget.id}-${widget.updatedAt?.getTime() || Date.now()}`}
-              widget={widget}
-              isSelected={selectedWidgetId === widget.id}
-              onClick={() => handleWidgetSelect(widget.id)}
-              onUpdate={(content) => handleUpdateWidget(widget.id, content)}
-              onUpdateSettings={(settings) => handleUpdateWidgetSettings && handleUpdateWidgetSettings(widget.id, settings)}
-            />
-          );
-        })}
-      </DndContext>
+        onWidgetSelect={handleWidgetSelect}
+        onUpdateWidget={handleUpdateWidget}
+        onUpdateWidgetSettings={handleUpdateWidgetSettings}
+      />
 
       {/* Collaboration cursors */}
       <CursorDisplay otherUsers={otherUsers} />
 
-      {/* Mobile-optimized controls */}
       {selectedWidgetId && (
         <>
           {isMobile ? (
