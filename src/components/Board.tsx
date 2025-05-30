@@ -1,4 +1,3 @@
-
 import { WidgetRenderer } from "@/components/widgets/WidgetRegistry";
 import WidgetStore from "@/components/WidgetStore";
 import { Widget } from "@/types";
@@ -29,6 +28,11 @@ const Board = ({ boardId, onUpdate }: BoardProps) => {
   const [centerPosition, setCenterPosition] = useState({ x: 400, y: 300 });
   const [draggedWidget, setDraggedWidget] = useState<{ id: string; startPosition: { x: number; y: number } } | null>(null);
   const boardRef = useRef<HTMLDivElement>(null);
+
+  // Debug logging for widgets
+  useEffect(() => {
+    console.log('Board widgets updated:', widgets.length, widgets);
+  }, [widgets]);
 
   // Update center position based on viewport
   useEffect(() => {
@@ -140,6 +144,11 @@ const Board = ({ boardId, onUpdate }: BoardProps) => {
     }
   };
 
+  const handleWidgetAdded = useCallback((widget: Widget) => {
+    console.log('Widget being added to board:', widget);
+    handleAddWidget(widget);
+  }, [handleAddWidget]);
+
   if (loading) {
     return (
       <div className="cork-board relative w-full h-[calc(100vh-64px)] overflow-auto flex items-center justify-center">
@@ -150,6 +159,8 @@ const Board = ({ boardId, onUpdate }: BoardProps) => {
 
   // Sort widgets by z-index for proper rendering order
   const sortedWidgets = [...widgets].sort((a, b) => (a.settings?.zIndex || 0) - (b.settings?.zIndex || 0));
+
+  console.log('Rendering board with widgets:', sortedWidgets.length);
 
   return (
     <div 
@@ -164,6 +175,7 @@ const Board = ({ boardId, onUpdate }: BoardProps) => {
         onDragEnd={handleDragEnd}
       >
         {sortedWidgets.map((widget) => {
+          console.log('Rendering widget:', widget.id, widget.type, widget.position);
           return (
             <WidgetRenderer
               key={`${widget.id}-${widget.updatedAt?.getTime() || Date.now()}`}
@@ -205,7 +217,7 @@ const Board = ({ boardId, onUpdate }: BoardProps) => {
       )}
 
       <WidgetStore 
-        onAddWidget={handleAddWidget} 
+        onAddWidget={handleWidgetAdded} 
         centerPosition={centerPosition} 
         boardId={boardId}
       />

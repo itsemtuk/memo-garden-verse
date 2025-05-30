@@ -78,11 +78,10 @@ export const WidgetRenderer = ({ widget, isSelected, onClick, onUpdate, onUpdate
     return null;
   }
 
-  // Handle different prop patterns for different widget types
+  // Handle note widgets specifically
   if (widget.type === 'note' || widget.type === 'social') {
-    const NoteComponent = WidgetComponent as typeof NoteWidget;
     return (
-      <NoteComponent
+      <NoteWidget
         widget={widget}
         isSelected={isSelected}
         onClick={onClick}
@@ -91,10 +90,10 @@ export const WidgetRenderer = ({ widget, isSelected, onClick, onUpdate, onUpdate
     );
   }
 
+  // Handle image widgets
   if (widget.type === 'image') {
-    const ImageComponent = WidgetComponent as typeof ImageWidget;
     return (
-      <ImageComponent
+      <ImageWidget
         widget={widget}
         isSelected={isSelected}
         onClick={onClick}
@@ -102,16 +101,15 @@ export const WidgetRenderer = ({ widget, isSelected, onClick, onUpdate, onUpdate
     );
   }
 
-  // For specialized widgets that use onUpdateSettings
-  const SpecializedComponent = WidgetComponent as any;
-  return (
-    <SpecializedComponent
-      widget={widget}
-      isSelected={isSelected}
-      onClick={onClick}
-      onUpdate={onUpdateSettings || (() => {})}
-    />
-  );
+  // For all other specialized widgets, they expect onUpdate to be for settings
+  const props = {
+    widget,
+    isSelected,
+    onClick,
+    onUpdate: onUpdateSettings || (() => {}),
+  };
+
+  return <WidgetComponent {...props} />;
 };
 
 export default WidgetRenderer;
