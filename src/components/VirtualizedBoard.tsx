@@ -16,6 +16,7 @@ interface VirtualizedBoardProps {
   onUpdateWidget: (widgetId: string, content: string) => void;
   onUpdateWidgetSettings?: (widgetId: string, settings: any) => void;
   draggedWidgets?: Map<string, { x: number; y: number }>;
+  readonly?: boolean;
 }
 
 const VirtualizedBoard: React.FC<VirtualizedBoardProps> = ({
@@ -29,6 +30,7 @@ const VirtualizedBoard: React.FC<VirtualizedBoardProps> = ({
   onUpdateWidget,
   onUpdateWidgetSettings,
   draggedWidgets = new Map(),
+  readonly = false,
 }) => {
   const { parentRef, rowVirtualizer, widgetRows, ROW_HEIGHT } = useBoardVirtualization({ widgets });
 
@@ -39,10 +41,10 @@ const VirtualizedBoard: React.FC<VirtualizedBoardProps> = ({
       style={{ contain: 'layout style paint' }}
     >
       <DndContext 
-        sensors={sensors} 
-        onDragStart={onDragStart}
-        onDragMove={onDragMove}
-        onDragEnd={onDragEnd}
+        sensors={readonly ? [] : sensors} 
+        onDragStart={readonly ? () => {} : onDragStart}
+        onDragMove={readonly ? () => {} : onDragMove}
+        onDragEnd={readonly ? () => {} : onDragEnd}
       >
         <div
           style={{
@@ -69,11 +71,12 @@ const VirtualizedBoard: React.FC<VirtualizedBoardProps> = ({
                 <WidgetRow
                   widgets={rowWidgets}
                   rowHeight={ROW_HEIGHT}
-                  selectedWidgetId={selectedWidgetId}
-                  onWidgetSelect={onWidgetSelect}
-                  onUpdateWidget={onUpdateWidget}
-                  onUpdateWidgetSettings={onUpdateWidgetSettings}
+                  selectedWidgetId={readonly ? null : selectedWidgetId}
+                  onWidgetSelect={readonly ? () => {} : onWidgetSelect}
+                  onUpdateWidget={readonly ? () => {} : onUpdateWidget}
+                  onUpdateWidgetSettings={readonly ? () => {} : onUpdateWidgetSettings}
                   draggedWidgets={draggedWidgets}
+                  readonly={readonly}
                 />
               </div>
             );

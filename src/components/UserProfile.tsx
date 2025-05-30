@@ -1,63 +1,98 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuSeparator, 
-  DropdownMenuTrigger 
-} from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
-import { LogOut, User } from 'lucide-react';
+import { useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
-const UserProfile = () => {
-  const { user, profile, signOut } = useAuth();
+interface UserProfileProps {
+  onClose: () => void;
+}
 
-  const handleSignOut = async () => {
+const UserProfile = ({ onClose }: UserProfileProps) => {
+  const { user, profile } = useAuth();
+  const [username, setUsername] = useState(profile?.username || '');
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    if (!user) return;
+
     try {
-      await signOut();
+      setSaving(true);
+      const { error } = await supabase
+        .from('profiles')
+        .update({ username: username.trim() })
+        .eq('id', user.id);
+
+      if (error) {
+        console.error('Error updating profile:', error);
+        toast.error('Failed to update profile');
+        return;
+      }
+
+      toast.success('Profile updated successfully!');
+      onClose();
     } catch (error) {
-      console.error('Error signing out:', error);
+      console.error('Error updating profile:', error);
+      toast.error('Failed to update profile');
+    } finally {
+      setSaving(false);
     }
   };
 
   if (!user || !profile) return null;
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-          <Avatar className="h-8 w-8">
-            <AvatarImage src={profile.avatar_url || undefined} alt={profile.username || 'User'} />
-            <AvatarFallback>
-              {profile.username ? profile.username.charAt(0).toUpperCase() : 'U'}
-            </AvatarFallback>
-          </Avatar>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56" align="end" forceMount>
-        <div className="flex items-center justify-start gap-2 p-2">
-          <div className="flex flex-col space-y-1 leading-none">
-            <p className="font-medium">{profile.username}</p>
-            <p className="w-[200px] truncate text-sm text-muted-foreground">
-              {user.email}
-            </p>
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <Card className="w-full max-w-md bg-white">
+        <CardHeader>
+          <CardTitle>Profile Settings</CardTitle>
+          <CardDescription>
+            Manage your profile information
+          </CardDescription>
+        </CardHeader>
+
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="username">Username</Label>
+            <Input
+              id="username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="Enter your username..."
+              maxLength={50}
+            />
           </div>
-        </div>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem>
-          <User className="mr-2 h-4 w-4" />
-          <span>Profile</span>
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={handleSignOut}>
-          <LogOut className="mr-2 h-4 w-4" />
-          <span>Log out</span>
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              value={user.email || ''}
+              disabled
+              className="bg-gray-50"
+            />
+          </div>
+
+          <div className="flex space-x-2 pt-4">
+            <Button variant="outline" onClick={onClose} className="flex-1">
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSave} 
+              disabled={saving || !username.trim()}
+              className="flex-1 bg-garden-primary hover:bg-garden-primary-dark text-white"
+            >
+              {saving ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 
