@@ -6,6 +6,7 @@ export interface WidgetSettings {
   };
   imagePath?: string;
   zIndex?: number;
+  rotation?: number;
   [key: string]: any; // Allow additional properties for different widget types
 }
 
