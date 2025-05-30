@@ -31,16 +31,19 @@ export const WidgetRenderer = ({
   const WidgetComponent = widgetRegistry[widget.type as keyof typeof widgetRegistry];
   
   if (!WidgetComponent) {
-    console.warn(`Unknown widget type: ${widget.type}`);
+    console.warn(`Unknown widget type: ${widget.type}`, widget);
     return (
-      <div className="absolute bg-red-100 border-2 border-red-500 rounded-lg p-4 text-red-700"
-           style={{
-             left: `${widget.position.x}px`,
-             top: `${widget.position.y}px`,
-             transform: `rotate(${widget.rotation || 0}deg)`,
-             zIndex: widget.settings?.zIndex || 1,
-           }}>
-        Unknown widget type: {widget.type}
+      <div 
+        className="bg-red-100 border-2 border-red-500 rounded-lg p-4 text-red-700 cursor-pointer"
+        onClick={onClick}
+        style={{
+          width: typeof widget.size?.width === 'string' ? widget.size.width : `${widget.size?.width || 200}px`,
+          height: typeof widget.size?.height === 'string' ? widget.size.height : `${widget.size?.height || 100}px`,
+        }}
+      >
+        <div className="text-sm font-semibold">Unknown Widget</div>
+        <div className="text-xs">Type: {widget.type}</div>
+        <div className="text-xs">ID: {widget.id.slice(0, 8)}...</div>
       </div>
     );
   }

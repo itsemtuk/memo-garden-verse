@@ -50,6 +50,13 @@ const Board = ({ boardId, onUpdate }: BoardProps) => {
   // Debug logging for widgets
   useEffect(() => {
     console.log('Board widgets updated:', widgets.length, widgets);
+    if (widgets.length === 0) {
+      console.log('No widgets found on board');
+    } else {
+      widgets.forEach(widget => {
+        console.log(`Widget ${widget.id}: type=${widget.type}, position=(${widget.position.x}, ${widget.position.y})`);
+      });
+    }
   }, [widgets]);
 
   // Update center position based on viewport
@@ -242,6 +249,13 @@ const Board = ({ boardId, onUpdate }: BoardProps) => {
       onClick={handleBoardClick}
       ref={boardRef}
     >
+      {widgets.length === 0 && (
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-gray-500 text-center">
+          <p className="text-lg mb-2">No widgets on this board yet</p>
+          <p className="text-sm">Click the + button to add your first widget</p>
+        </div>
+      )}
+
       <VirtualizedBoard
         widgets={widgets}
         selectedWidgetId={selectedWidgetId}
