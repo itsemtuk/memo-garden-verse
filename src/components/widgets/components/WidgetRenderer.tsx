@@ -72,7 +72,7 @@ export const WidgetRenderer = ({
     );
   }
 
-  // Fallback for any other widgets - only pass props that are expected
+  // Fallback for any other widgets - only pass standard props
   return (
     <WidgetComponent
       widget={widget}
