@@ -1,10 +1,19 @@
+
 import { WidgetRenderer } from "@/components/widgets/WidgetRegistry";
 import WidgetStore from "@/components/WidgetStore";
 import { Widget } from "@/types";
-import { DndContext, DragEndEvent, DragStartEvent, DragMoveEvent, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
+import { DndContext, DragEndEvent, DragStartEvent, DragMoveEvent, PointerSensor, TouchSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useBoardData } from "@/hooks/useBoardData";
-import { Trash2, MoveUp, MoveDown } from "lucide-react";
+import { Trash2, MoveUp, MoveDown, Plus } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { 
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
 
 interface BoardProps {
   boardId: string;
@@ -12,6 +21,7 @@ interface BoardProps {
 }
 
 const Board = ({ boardId, onUpdate }: BoardProps) => {
+  const isMobile = useIsMobile();
   const {
     widgets,
     loading,
@@ -25,8 +35,9 @@ const Board = ({ boardId, onUpdate }: BoardProps) => {
   } = useBoardData(boardId);
 
   const [selectedWidgetId, setSelectedWidgetId] = useState<string | null>(null);
-  const [centerPosition, setCenterPosition] = useState({ x: 400, y: 300 });
+  const [centerPosition, setCenterPosition] = useState({ x: 200, y: 150 });
   const [draggedWidget, setDraggedWidget] = useState<{ id: string; startPosition: { x: number; y: number } } | null>(null);
+  const [showWidgetStore, setShowWidgetStore] = useState(false);
   const boardRef = useRef<HTMLDivElement>(null);
 
   // Debug logging for widgets
@@ -40,8 +51,8 @@ const Board = ({ boardId, onUpdate }: BoardProps) => {
       if (boardRef.current) {
         const rect = boardRef.current.getBoundingClientRect();
         setCenterPosition({
-          x: rect.width / 2,
-          y: rect.height / 2,
+          x: isMobile ? rect.width / 2 : rect.width / 2,
+          y: isMobile ? rect.height / 3 : rect.height / 2,
         });
       }
     };
@@ -52,7 +63,7 @@ const Board = ({ boardId, onUpdate }: BoardProps) => {
     return () => {
       window.removeEventListener('resize', updateCenterPosition);
     };
-  }, []);
+  }, [isMobile]);
 
   // Notify parent component of widget changes
   useEffect(() => {
@@ -64,7 +75,13 @@ const Board = ({ boardId, onUpdate }: BoardProps) => {
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 3,
+        distance: isMobile ? 8 : 3,
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 100,
+        tolerance: 5,
       },
     })
   );
@@ -78,6 +95,7 @@ const Board = ({ boardId, onUpdate }: BoardProps) => {
         id: widgetId,
         startPosition: widget.position
       });
+      setSelectedWidgetId(widgetId);
       console.log('Drag started for widget:', widgetId);
     }
   }, [widgets]);
@@ -147,6 +165,7 @@ const Board = ({ boardId, onUpdate }: BoardProps) => {
   const handleWidgetAdded = useCallback((widget: Widget) => {
     console.log('Widget being added to board:', widget);
     handleAddWidget(widget);
+    setShowWidgetStore(false);
   }, [handleAddWidget]);
 
   if (loading) {
@@ -164,7 +183,11 @@ const Board = ({ boardId, onUpdate }: BoardProps) => {
 
   return (
     <div 
-      className="cork-board board-canvas relative w-full h-[calc(100vh-64px)] overflow-auto"
+      className={`cork-board board-canvas relative w-full overflow-auto select-none ${
+        isMobile 
+          ? 'h-[calc(100vh-56px)] touch-pan-x touch-pan-y' 
+          : 'h-[calc(100vh-64px)]'
+      }`}
       onClick={handleBoardClick}
       ref={boardRef}
     >
@@ -189,38 +212,93 @@ const Board = ({ boardId, onUpdate }: BoardProps) => {
         })}
       </DndContext>
 
-      {/* Layer and delete controls for selected widget - positioned on left side */}
+      {/* Mobile-optimized controls */}
       {selectedWidgetId && (
-        <div className="fixed left-4 top-1/2 transform -translate-y-1/2 flex flex-col gap-2 bg-white p-2 rounded-lg shadow-lg border z-50">
-          <button
-            onClick={handleBringWidgetToFront}
-            className="px-3 py-2 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center gap-1"
-            title="Bring to Front"
-          >
-            <MoveUp className="w-3 h-3" />
-          </button>
-          <button
-            onClick={handleSendWidgetToBack}
-            className="px-3 py-2 text-xs bg-gray-500 text-white rounded hover:bg-gray-600 flex items-center gap-1"
-            title="Send to Back"
-          >
-            <MoveDown className="w-3 h-3" />
-          </button>
-          <button
-            onClick={handleDeleteSelectedWidget}
-            className="px-3 py-2 text-xs bg-red-500 text-white rounded hover:bg-red-600 flex items-center gap-1"
-            title="Delete Widget"
-          >
-            <Trash2 className="w-3 h-3" />
-          </button>
-        </div>
+        <>
+          {isMobile ? (
+            // Mobile: Bottom drawer with controls
+            <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2 bg-white/90 backdrop-blur-sm p-3 rounded-full shadow-lg border z-50">
+              <button
+                onClick={handleBringWidgetToFront}
+                className="p-3 text-xs bg-blue-500 text-white rounded-full hover:bg-blue-600 flex items-center justify-center shadow-lg active:scale-95 transition-transform"
+                title="Bring to Front"
+              >
+                <MoveUp className="w-4 h-4" />
+              </button>
+              <button
+                onClick={handleSendWidgetToBack}
+                className="p-3 text-xs bg-gray-500 text-white rounded-full hover:bg-gray-600 flex items-center justify-center shadow-lg active:scale-95 transition-transform"
+                title="Send to Back"
+              >
+                <MoveDown className="w-4 h-4" />
+              </button>
+              <button
+                onClick={handleDeleteSelectedWidget}
+                className="p-3 text-xs bg-red-500 text-white rounded-full hover:bg-red-600 flex items-center justify-center shadow-lg active:scale-95 transition-transform"
+                title="Delete Widget"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+          ) : (
+            // Desktop: Side controls
+            <div className="fixed left-4 top-1/2 transform -translate-y-1/2 flex flex-col gap-2 bg-white p-2 rounded-lg shadow-lg border z-50">
+              <button
+                onClick={handleBringWidgetToFront}
+                className="px-3 py-2 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center gap-1"
+                title="Bring to Front"
+              >
+                <MoveUp className="w-3 h-3" />
+              </button>
+              <button
+                onClick={handleSendWidgetToBack}
+                className="px-3 py-2 text-xs bg-gray-500 text-white rounded hover:bg-gray-600 flex items-center gap-1"
+                title="Send to Back"
+              >
+                <MoveDown className="w-3 h-3" />
+              </button>
+              <button
+                onClick={handleDeleteSelectedWidget}
+                className="px-3 py-2 text-xs bg-red-500 text-white rounded hover:bg-red-600 flex items-center gap-1"
+                title="Delete Widget"
+              >
+                <Trash2 className="w-3 h-3" />
+              </button>
+            </div>
+          )}
+        </>
       )}
 
-      <WidgetStore 
-        onAddWidget={handleWidgetAdded} 
-        centerPosition={centerPosition} 
-        boardId={boardId}
-      />
+      {/* Widget Store - Mobile optimized */}
+      {isMobile ? (
+        <Drawer open={showWidgetStore} onOpenChange={setShowWidgetStore}>
+          <DrawerTrigger asChild>
+            <button className="fixed bottom-4 right-4 w-14 h-14 bg-garden-primary text-white rounded-full shadow-lg flex items-center justify-center z-40 active:scale-95 transition-transform">
+              <Plus className="w-6 h-6" />
+            </button>
+          </DrawerTrigger>
+          <DrawerContent className="max-h-[80vh]">
+            <DrawerHeader>
+              <DrawerTitle>Add Widget</DrawerTitle>
+            </DrawerHeader>
+            <div className="p-4 pb-8 overflow-y-auto">
+              <WidgetStore 
+                onAddWidget={handleWidgetAdded} 
+                centerPosition={centerPosition} 
+                boardId={boardId}
+              />
+            </div>
+          </DrawerContent>
+        </Drawer>
+      ) : (
+        <>
+          <WidgetStore 
+            onAddWidget={handleWidgetAdded} 
+            centerPosition={centerPosition} 
+            boardId={boardId}
+          />
+        </>
+      )}
     </div>
   );
 };

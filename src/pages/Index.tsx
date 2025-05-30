@@ -9,9 +9,11 @@ import { v4 as uuidv4 } from "uuid";
 import { validateAndSanitizeBoardInput } from "@/lib/validation";
 import { createUserFriendlyError, getErrorMessage } from "@/lib/errorHandling";
 import { toast } from "sonner";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const Index = () => {
   const { user } = useAuth();
+  const isMobile = useIsMobile();
   const [boards, setBoards] = useState<BoardType[]>([]);
   const [currentBoardId, setCurrentBoardId] = useState<string>("");
   const [showBoards, setShowBoards] = useState(false);
@@ -182,7 +184,7 @@ const Index = () => {
   }
 
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex flex-col h-screen touch-manipulation">
       <NavBar 
         currentBoard={currentBoard}
         availableBoards={boards}
@@ -190,16 +192,16 @@ const Index = () => {
         onCreateBoard={handleCreateBoard}
       />
 
-      <main className="flex-1 overflow-hidden">
+      <main className={`flex-1 overflow-hidden ${isMobile ? 'touch-pan-x touch-pan-y' : ''}`}>
         {showBoards ? (
-          <div className="p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold">All Boards</h2>
+          <div className={`p-3 ${isMobile ? 'p-4' : 'p-6'}`}>
+            <div className="flex justify-between items-center mb-4 md:mb-6">
+              <h2 className={`font-bold ${isMobile ? 'text-xl' : 'text-2xl'}`}>All Boards</h2>
               <button
                 onClick={() => setShowBoards(false)}
-                className="text-sm text-garden-primary hover:underline"
+                className={`text-garden-primary hover:underline ${isMobile ? 'text-sm px-3 py-2 bg-garden-primary text-white rounded-lg hover:bg-garden-primary-dark' : 'text-sm'}`}
               >
-                Back to Current Board
+                {isMobile ? 'Back' : 'Back to Current Board'}
               </button>
             </div>
             <BoardsList

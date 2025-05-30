@@ -106,15 +106,37 @@ export default {
 				'float': {
 					'0%, 100%': { transform: 'translateY(0)' },
 					'50%': { transform: 'translateY(-10px)' }
+				},
+				'mobile-bounce': {
+					'0%, 100%': { transform: 'scale(1)' },
+					'50%': { transform: 'scale(1.05)' }
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out',
-				'float': 'float 6s ease-in-out infinite'
+				'float': 'float 6s ease-in-out infinite',
+				'mobile-bounce': 'mobile-bounce 0.2s ease-in-out'
 			},
 			backgroundImage: {
 				'cork-pattern': "url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1IiBoZWlnaHQ9IjUiPgo8cmVjdCB3aWR0aD0iNSIgaGVpZ2h0PSI1IiBmaWxsPSIjRDdCRkFFIj48L3JlY3Q+CjxwYXRoIGQ9Ik0wIDVMNSAwWk02IDRMNCA2Wk0tMSAxTDEgLTFaIiBzdHJva2U9IiNBNjdCNUIiIHN0cm9rZS13aWR0aD0iMSI+PC9wYXRoPgo8L3N2Zz4=')"
+			},
+			// Mobile-specific breakpoints
+			screens: {
+				'xs': '475px',
+				'3xl': '1600px',
+			},
+			// Touch-friendly sizing
+			spacing: {
+				'touch': '44px', // Standard touch target size
+				'touch-sm': '32px',
+				'touch-lg': '56px',
+			},
+			// Mobile-optimized font sizes
+			fontSize: {
+				'xs-mobile': ['12px', '16px'],
+				'sm-mobile': ['14px', '20px'],
+				'base-mobile': ['16px', '24px'], // Prevents zoom on iOS
 			}
 		}
 	},
