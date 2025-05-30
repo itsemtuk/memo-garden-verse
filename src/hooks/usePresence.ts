@@ -54,9 +54,15 @@ export const usePresence = (boardId: string) => {
         
         Object.entries(newState).forEach(([userId, presences]) => {
           if (userId !== user.id && presences && presences.length > 0) {
-            // Properly handle the presence data structure
+            // Get the latest presence data and validate its structure
             const presenceData = presences[0];
-            if (presenceData && typeof presenceData === 'object' && 'userId' in presenceData) {
+            
+            // Check if the presence data has the required UserPresence structure
+            if (presenceData && 
+                typeof presenceData === 'object' && 
+                'userId' in presenceData && 
+                'username' in presenceData && 
+                'lastSeen' in presenceData) {
               users.push(presenceData as UserPresence);
             }
           }
