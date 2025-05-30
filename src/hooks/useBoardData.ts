@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect } from 'react';
 import { Widget } from '@/types';
 import { CreateWidgetData } from '@/types/widget';
@@ -22,14 +21,18 @@ export const useBoardData = (boardId: string) => {
   const allWidgets = [...notesAsWidgets, ...imageWidgets];
 
   const handleAddWidget = useCallback(async (widget: Widget) => {
+    console.log('handleAddWidget called with:', widget);
+    
     if (widget.type === 'note') {
       try {
+        console.log('Creating note widget');
         await createNote(widget.content, widget.position.x, widget.position.y);
       } catch (error) {
         console.error('Failed to create note:', error);
       }
     } else if (['image', 'weather', 'plant_reminder', 'shopping_list', 'social'].includes(widget.type)) {
       try {
+        console.log('Creating widget with type:', widget.type);
         const sizeSettings = widget.size ? {
           width: typeof widget.size.width === 'string' ? 
             parseInt(widget.size.width.replace('px', ''), 10) : 
@@ -49,6 +52,7 @@ export const useBoardData = (boardId: string) => {
             ...widget.settings
           }
         });
+        console.log('Widget created successfully');
       } catch (error) {
         console.error('Failed to create widget:', error);
       }

@@ -95,6 +95,8 @@ export const useWidgetCreator = ({ boardId, centerPosition, onAddWidget }: UseWi
     const randomRotation = Math.floor(Math.random() * 6) - 3;
     let newWidget: Widget | null = null;
 
+    console.log('Creating widget:', type, 'at position:', centerPosition);
+
     try {
       switch (type) {
         case "note":
@@ -174,10 +176,12 @@ export const useWidgetCreator = ({ boardId, centerPosition, onAddWidget }: UseWi
       }
 
       if (newWidget) {
+        console.log('Widget created successfully:', newWidget);
         onAddWidget(newWidget);
         return true;
       }
     } catch (error) {
+      console.error('Error creating widget:', error);
       const errorMessage = handleValidationError(error);
       const errorField = type === 'plant_reminder' ? 'plant' : type;
       setErrors(prev => ({ ...prev, [errorField]: errorMessage }));
