@@ -24,6 +24,12 @@ import CountdownTimerWidget from "./CountdownTimerWidget";
 import WhiteboardWidget from "./WhiteboardWidget";
 import StockTickerWidget from "./StockTickerWidget";
 import CurrencyConverterWidget from "./CurrencyConverterWidget";
+import TranslatorWidget from "./TranslatorWidget";
+import TravelPlannerWidget from "./TravelPlannerWidget";
+import ExpenseTrackerWidget from "./ExpenseTrackerWidget";
+import ContactListWidget from "./ContactListWidget";
+import BookTrackerWidget from "./BookTrackerWidget";
+import FlashcardsWidget from "./FlashcardsWidget";
 
 interface WidgetRendererProps {
   widget: Widget;
@@ -58,16 +64,15 @@ const widgetRegistry = {
   whiteboard: WhiteboardWidget,
   stock_ticker: StockTickerWidget,
   currency_converter: CurrencyConverterWidget,
-  social: NoteWidget, // Placeholder for now
-  // Placeholders for new widgets that need implementation
-  translator: NoteWidget,
-  travel_planner: NoteWidget,
-  expense_tracker: NoteWidget,
-  contact_list: NoteWidget,
-  social_media_feed: NoteWidget,
-  book_tracker: NoteWidget,
-  flashcards: NoteWidget,
-  news_headlines: NoteWidget,
+  translator: TranslatorWidget,
+  travel_planner: TravelPlannerWidget,
+  expense_tracker: ExpenseTrackerWidget,
+  contact_list: ContactListWidget,
+  book_tracker: BookTrackerWidget,
+  flashcards: FlashcardsWidget,
+  social: NoteWidget, // Keep as placeholder for now
+  social_media_feed: NoteWidget, // Will be placeholder until implemented
+  news_headlines: NewsFeedWidget, // Use existing news feed component
 };
 
 export const WidgetRenderer = ({ widget, isSelected, onClick, onUpdate, onUpdateSettings }: WidgetRendererProps) => {
@@ -75,11 +80,21 @@ export const WidgetRenderer = ({ widget, isSelected, onClick, onUpdate, onUpdate
   
   if (!WidgetComponent) {
     console.warn(`Unknown widget type: ${widget.type}`);
-    return null;
+    return (
+      <div className="absolute bg-red-100 border-2 border-red-500 rounded-lg p-4 text-red-700"
+           style={{
+             left: `${widget.position.x}px`,
+             top: `${widget.position.y}px`,
+             transform: `rotate(${widget.rotation || 0}deg)`,
+             zIndex: widget.settings?.zIndex || 1,
+           }}>
+        Unknown widget type: {widget.type}
+      </div>
+    );
   }
 
-  // Handle note widgets specifically
-  if (widget.type === 'note' || widget.type === 'social') {
+  // Handle note widgets and social widgets specifically
+  if (widget.type === 'note' || widget.type === 'social' || widget.type === 'social_media_feed') {
     return (
       <NoteWidget
         widget={widget}
@@ -101,15 +116,33 @@ export const WidgetRenderer = ({ widget, isSelected, onClick, onUpdate, onUpdate
     );
   }
 
-  // For all other specialized widgets, they expect onUpdate to be for settings
-  const props = {
-    widget,
-    isSelected,
-    onClick,
-    onUpdate: onUpdateSettings || (() => {}),
-  };
+  // Handle specialized widgets that use settings-based updates
+  if (['calendar', 'todo_list', 'shopping_list', 'timer', 'habit_tracker', 'mood_tracker', 
+       'goal_tracker', 'bookmark_manager', 'file_attachment', 'music_player', 'recipe_planner',
+       'fitness_tracker', 'countdown_timer', 'whiteboard', 'stock_ticker', 'currency_converter',
+       'weather', 'weather_extended', 'plant_reminder', 'rich_text', 'news_feed', 'quotes',
+       'translator', 'travel_planner', 'expense_tracker', 'contact_list', 'book_tracker', 
+       'flashcards', 'news_headlines'].includes(widget.type)) {
+    return (
+      <WidgetComponent
+        widget={widget}
+        isSelected={isSelected}
+        onClick={onClick}
+        onUpdate={onUpdateSettings || (() => {})}
+      />
+    );
+  }
 
-  return <WidgetComponent {...props} />;
+  // Fallback for any other widgets
+  return (
+    <WidgetComponent
+      widget={widget}
+      isSelected={isSelected}
+      onClick={onClick}
+      onUpdate={onUpdate}
+      onUpdateSettings={onUpdateSettings}
+    />
+  );
 };
 
 export default WidgetRenderer;
