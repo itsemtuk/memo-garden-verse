@@ -72,14 +72,13 @@ export const WidgetRenderer = ({
     );
   }
 
-  // Fallback for any other widgets
+  // Fallback for any other widgets - only pass props that are expected
   return (
     <WidgetComponent
       widget={widget}
       isSelected={isSelected}
       onClick={onClick}
       onUpdate={onUpdate}
-      onUpdateSettings={onUpdateSettings}
     />
   );
 };
