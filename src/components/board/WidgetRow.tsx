@@ -46,6 +46,12 @@ const DraggableWidget: React.FC<{
     }
   };
 
+  const handleWidgetClick = () => {
+    if (!readonly) {
+      onSelect();
+    }
+  };
+
   return (
     <div
       ref={setNodeRef}
@@ -65,7 +71,7 @@ const DraggableWidget: React.FC<{
       <WidgetRenderer
         widget={widget}
         isSelected={isSelected}
-        onClick={handleClick}
+        onClick={handleWidgetClick}
         onUpdate={onUpdateContent}
         onUpdateSettings={onUpdateSettings}
       />
