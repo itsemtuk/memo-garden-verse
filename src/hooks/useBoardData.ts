@@ -1,7 +1,11 @@
+
 import { useState, useCallback, useEffect } from 'react';
 import { Widget } from '@/types';
 import { CreateWidgetData } from '@/types/widget';
 import { useNotes } from './useNotes';
+import { validateAndSanitizeContent } from '@/lib/validation';
+import { createUserFriendlyError } from '@/lib/errorHandling';
+import { toast } from 'sonner';
 
 // Helper function to validate UUID format
 const isValidUUID = (str: string) => {
@@ -33,32 +37,50 @@ export const useBoardData = (boardId: string) => {
     // Validate board ID format
     if (!isValidUUID(boardId)) {
       console.error('Invalid board ID format:', boardId);
-      console.error('Board ID must be a valid UUID format');
+      const error = createUserFriendlyError('Invalid board selected. Please refresh and try again.');
+      toast.error(error.message);
+      return;
+    }
+
+    // Validate position bounds (prevent widgets from being placed too far off-screen)
+    if (widget.position.x < -1000 || widget.position.x > 10000 || 
+        widget.position.y < -1000 || widget.position.y > 10000) {
+      const error = createUserFriendlyError('Widget position is invalid. Please try again.');
+      toast.error(error.message);
       return;
     }
     
     if (widget.type === 'note') {
       try {
         console.log('Creating note widget');
-        await createNote(widget.content, widget.position.x, widget.position.y);
+        // Validate and sanitize content
+        const sanitizedContent = validateAndSanitizeContent(widget.content);
+        await createNote(sanitizedContent, widget.position.x, widget.position.y);
       } catch (error) {
         console.error('Failed to create note:', error);
+        const friendlyError = createUserFriendlyError('Failed to create note. Please try again.');
+        toast.error(friendlyError.message);
       }
     } else if (['image', 'weather', 'plant_reminder', 'shopping_list', 'social'].includes(widget.type)) {
       try {
         console.log('Creating widget with type:', widget.type);
+        
+        // Validate and sanitize content
+        const sanitizedContent = validateAndSanitizeContent(widget.content, true);
+        
+        // Validate size settings
         const sizeSettings = widget.size ? {
           width: typeof widget.size.width === 'string' ? 
-            parseInt(widget.size.width.replace('px', ''), 10) : 
-            widget.size.width,
+            Math.min(Math.max(parseInt(widget.size.width.replace('px', ''), 10) || 300, 100), 1000) : 
+            Math.min(Math.max(widget.size.width || 300, 100), 1000),
           height: typeof widget.size.height === 'string' ? 
-            parseInt(widget.size.height.replace('px', ''), 10) || 200 : 
-            widget.size.height
+            Math.min(Math.max(parseInt(widget.size.height.replace('px', ''), 10) || 200, 100), 800) : 
+            Math.min(Math.max(widget.size.height || 200, 100), 800)
         } : { width: 300, height: 200 };
 
         await createWidget({
           type: widget.type as 'note' | 'image',
-          content: widget.content,
+          content: sanitizedContent,
           x: widget.position.x,
           y: widget.position.y,
           settings: { 
@@ -69,6 +91,8 @@ export const useBoardData = (boardId: string) => {
         console.log('Widget created successfully');
       } catch (error) {
         console.error('Failed to create widget:', error);
+        const friendlyError = createUserFriendlyError('Failed to create widget. Please try again.');
+        toast.error(friendlyError.message);
       }
     }
   }, [createNote, createWidget, boardId]);
@@ -79,17 +103,30 @@ export const useBoardData = (boardId: string) => {
     
     if (isNote) {
       try {
-        await updateNoteContent(widgetId, updatedContent);
+        // Validate and sanitize content
+        const sanitizedContent = validateAndSanitizeContent(updatedContent);
+        await updateNoteContent(widgetId, sanitizedContent);
       } catch (error) {
         console.error('Failed to update note:', error);
+        const friendlyError = createUserFriendlyError('Failed to update note. Please try again.');
+        toast.error(friendlyError.message);
       }
     } else {
-      // Handle image widgets locally
-      setImageWidgets(prev => prev.map(widget =>
-        widget.id === widgetId
-          ? { ...widget, content: updatedContent, updatedAt: new Date() }
-          : widget
-      ));
+      try {
+        // Validate and sanitize content for local widgets
+        const sanitizedContent = validateAndSanitizeContent(updatedContent, true);
+        
+        // Handle image widgets locally
+        setImageWidgets(prev => prev.map(widget =>
+          widget.id === widgetId
+            ? { ...widget, content: sanitizedContent, updatedAt: new Date() }
+            : widget
+        ));
+      } catch (error) {
+        console.error('Failed to update widget:', error);
+        const friendlyError = createUserFriendlyError('Failed to update widget. Please try again.');
+        toast.error(friendlyError.message);
+      }
     }
   }, [notesAsWidgets, updateNoteContent]);
 
@@ -99,21 +136,55 @@ export const useBoardData = (boardId: string) => {
     
     if (isDbWidget) {
       try {
-        await updateWidgetSettings(widgetId, settings);
+        // Validate settings object structure
+        if (settings && typeof settings === 'object') {
+          // Sanitize any string values in settings
+          const sanitizedSettings = Object.keys(settings).reduce((acc, key) => {
+            const value = settings[key];
+            if (typeof value === 'string') {
+              acc[key] = validateAndSanitizeContent(value, true);
+            } else if (typeof value === 'object' && value !== null) {
+              // Handle nested objects like size settings
+              acc[key] = value;
+            } else {
+              acc[key] = value;
+            }
+            return acc;
+          }, {} as any);
+          
+          await updateWidgetSettings(widgetId, sanitizedSettings);
+        }
       } catch (error) {
         console.error('Failed to update widget settings:', error);
+        const friendlyError = createUserFriendlyError('Failed to update widget settings. Please try again.');
+        toast.error(friendlyError.message);
       }
     } else {
-      // Handle local widgets
-      setImageWidgets(prev => prev.map(widget =>
-        widget.id === widgetId
-          ? { ...widget, settings, updatedAt: new Date() }
-          : widget
-      ));
+      // Handle local widgets with validation
+      try {
+        if (settings && typeof settings === 'object') {
+          setImageWidgets(prev => prev.map(widget =>
+            widget.id === widgetId
+              ? { ...widget, settings, updatedAt: new Date() }
+              : widget
+          ));
+        }
+      } catch (error) {
+        console.error('Failed to update local widget settings:', error);
+        const friendlyError = createUserFriendlyError('Failed to update widget settings. Please try again.');
+        toast.error(friendlyError.message);
+      }
     }
   }, [notesAsWidgets, updateWidgetSettings]);
 
   const handleWidgetPositionChange = useCallback(async (widgetId: string, x: number, y: number) => {
+    // Validate position bounds
+    if (x < -1000 || x > 10000 || y < -1000 || y > 10000) {
+      const error = createUserFriendlyError('Widget position is out of bounds.');
+      toast.error(error.message);
+      return;
+    }
+
     // Check if it's a note widget (from database)
     const isNote = notesAsWidgets.some(w => w.id === widgetId);
     
@@ -122,6 +193,8 @@ export const useBoardData = (boardId: string) => {
         await updateNotePosition(widgetId, x, y);
       } catch (error) {
         console.error('Failed to update note position:', error);
+        const friendlyError = createUserFriendlyError('Failed to move note. Please try again.');
+        toast.error(friendlyError.message);
       }
     } else {
       // Handle image widgets locally

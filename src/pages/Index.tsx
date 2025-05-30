@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Board as BoardType, Widget } from "@/types";
 import Board from "@/components/Board";
@@ -7,6 +6,9 @@ import BoardsList from "@/components/BoardsList";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { v4 as uuidv4 } from "uuid";
+import { validateAndSanitizeBoardInput } from "@/lib/validation";
+import { createUserFriendlyError, getErrorMessage } from "@/lib/errorHandling";
+import { toast } from "sonner";
 
 const Index = () => {
   const { user } = useAuth();
@@ -43,7 +45,11 @@ const Index = () => {
         .eq('owner_id', user.id)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database error fetching boards:', error);
+        toast.error('Failed to load boards. Please try again.');
+        throw error;
+      }
 
       if (data && data.length > 0) {
         const transformedBoards = data.map(transformDbBoard);
@@ -55,6 +61,8 @@ const Index = () => {
       }
     } catch (error) {
       console.error('Error fetching boards:', error);
+      const friendlyError = createUserFriendlyError('Unable to load your boards. Please refresh the page and try again.');
+      toast.error(friendlyError.message);
     } finally {
       setLoading(false);
     }
@@ -67,18 +75,34 @@ const Index = () => {
   }, [user]);
 
   const handleBoardChange = (boardId: string) => {
+    // Validate that the user has access to this board
+    const board = boards.find(b => b.id === boardId);
+    if (!board) {
+      toast.error('Board not found or access denied.');
+      return;
+    }
+    
     setCurrentBoardId(boardId);
     setShowBoards(false);
   };
 
   const handleCreateBoard = async (name: string) => {
-    if (!user) return;
+    if (!user) {
+      toast.error('You must be logged in to create boards.');
+      return;
+    }
 
     try {
+      // Validate and sanitize input
+      const { name: sanitizedName, description } = validateAndSanitizeBoardInput(
+        name, 
+        "A new board for organizing thoughts and ideas"
+      );
+
       const newBoard = {
         id: uuidv4(),
-        name,
-        description: "A new board for organizing thoughts and ideas",
+        name: sanitizedName,
+        description,
         is_public: false,
         owner_id: user.id,
         collaborators: [],
@@ -91,14 +115,26 @@ const Index = () => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database error creating board:', error);
+        if (error.code === '23505') {
+          toast.error('A board with this name already exists.');
+        } else if (error.code === '42501') {
+          toast.error('You do not have permission to create boards.');
+        } else {
+          toast.error('Failed to create board. Please try again.');
+        }
+        throw error;
+      }
 
       const transformedBoard = transformDbBoard(data);
       setBoards((prevBoards) => [transformedBoard, ...prevBoards]);
       setCurrentBoardId(transformedBoard.id);
       setShowBoards(false);
+      toast.success('Board created successfully!');
     } catch (error) {
       console.error('Error creating board:', error);
+      // Error already handled above with specific messages
     }
   };
 
