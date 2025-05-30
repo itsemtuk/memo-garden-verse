@@ -131,6 +131,13 @@ export const useNotes = (boardId: string) => {
         .eq('id', noteId);
 
       if (error) throw error;
+      
+      // Optimistically update local state
+      setNotes(prev => prev.map(note => 
+        note.id === noteId 
+          ? { ...note, content, updated_at: new Date().toISOString() }
+          : note
+      ));
     } catch (err) {
       console.error('Error updating note content:', err);
       throw err;
@@ -149,6 +156,13 @@ export const useNotes = (boardId: string) => {
         .eq('id', widgetId);
 
       if (error) throw error;
+      
+      // Optimistically update local state
+      setNotes(prev => prev.map(note => 
+        note.id === widgetId 
+          ? { ...note, widget_settings: settings, updated_at: new Date().toISOString() }
+          : note
+      ));
     } catch (err) {
       console.error('Error updating widget settings:', err);
       throw err;
@@ -158,17 +172,33 @@ export const useNotes = (boardId: string) => {
   // Delete note
   const deleteNote = useCallback(async (noteId: string) => {
     try {
+      console.log('Deleting note:', noteId);
+      
+      // Optimistically remove from local state first for immediate UI feedback
+      setNotes(prev => {
+        const filtered = prev.filter(note => note.id !== noteId);
+        console.log('Optimistically removed note, remaining notes:', filtered.length);
+        return filtered;
+      });
+      
       const { error } = await supabase
         .from('notes')
         .delete()
         .eq('id', noteId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database error deleting note:', error);
+        // Revert optimistic update on error
+        fetchNotes();
+        throw error;
+      }
+      
+      console.log('Note deleted from database successfully');
     } catch (err) {
       console.error('Error deleting note:', err);
       throw err;
     }
-  }, []);
+  }, [fetchNotes]);
 
   // Set up real-time subscription
   useEffect(() => {
@@ -207,8 +237,10 @@ export const useNotes = (boardId: string) => {
             break;
           case 'DELETE':
             setNotes(prev => {
-              console.log('Removing note from state:', payload.old.id);
-              return prev.filter(note => note.id !== payload.old.id);
+              console.log('Real-time delete received for note:', payload.old.id);
+              const filtered = prev.filter(note => note.id !== payload.old.id);
+              console.log('After real-time delete, remaining notes:', filtered.length);
+              return filtered;
             });
             break;
         }

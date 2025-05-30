@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useEffect } from 'react';
 import { Widget } from '@/types';
 import { CreateWidgetData } from '@/types/widget';
@@ -231,15 +232,24 @@ export const useBoardData = (boardId: string) => {
 
   const handleDeleteWidget = useCallback(async (widgetId: string) => {
     try {
+      console.log('Attempting to delete widget:', widgetId);
+      
       // Check if it's a note widget (from database)
       const isNote = notesAsWidgets.some(w => w.id === widgetId);
       
       if (isNote) {
+        console.log('Deleting database widget:', widgetId);
         await deleteNote(widgetId);
         toast.success('Widget deleted successfully');
+        console.log('Database widget deleted successfully');
       } else {
+        console.log('Deleting local widget:', widgetId);
         // Handle local widgets
-        setImageWidgets(prev => prev.filter(widget => widget.id !== widgetId));
+        setImageWidgets(prev => {
+          const filtered = prev.filter(widget => widget.id !== widgetId);
+          console.log('Local widget deleted, remaining:', filtered.length);
+          return filtered;
+        });
         toast.success('Widget deleted successfully');
       }
     } catch (error) {
