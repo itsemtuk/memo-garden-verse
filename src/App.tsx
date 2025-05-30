@@ -8,6 +8,8 @@ import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import Homepage from "./pages/Homepage";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
+import Explore from "./pages/Explore";
+import PublicBoard from "./pages/PublicBoard";
 import NotFound from "./pages/NotFound";
 import "./App.css";
 
@@ -23,6 +25,8 @@ function App() {
             <Routes>
               <Route path="/" element={<Homepage />} />
               <Route path="/auth" element={<Auth />} />
+              <Route path="/explore" element={<Explore />} />
+              <Route path="/board/:boardId" element={<PublicBoard />} />
               <Route
                 path="/app"
                 element={

@@ -6,6 +6,14 @@ import WidgetRow from '../WidgetRow';
 describe('WidgetRow', () => {
   it('renders without crashing', () => {
     const mockWidgets = [];
-    render(<WidgetRow widgets={mockWidgets} />);
+    const mockProps = {
+      widgets: mockWidgets,
+      rowHeight: 300,
+      selectedWidgetId: null,
+      onWidgetSelect: jest.fn(),
+      onUpdateWidget: jest.fn(),
+      onUpdateWidgetSettings: jest.fn(),
+    };
+    render(<WidgetRow {...mockProps} />);
   });
 });

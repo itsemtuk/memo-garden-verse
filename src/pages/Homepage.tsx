@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowRight, Star, Users, Palette, Zap } from "lucide-react";
+import { ArrowRight, Star, Users, Palette, Zap, Search } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 const Homepage = () => {
@@ -13,7 +13,7 @@ const Homepage = () => {
 
   const handleGetStarted = () => {
     if (user) {
-      navigate("/");
+      navigate("/app");
     } else {
       navigate("/auth");
     }
@@ -53,6 +53,14 @@ const Homepage = () => {
               <div className="hidden md:block md:ml-10 md:pr-4 md:space-x-8">
                 <Button 
                   variant="ghost" 
+                  onClick={() => navigate("/explore")}
+                  className="text-garden-text hover:text-garden-primary"
+                >
+                  <Search className="w-4 h-4 mr-2" />
+                  Explore
+                </Button>
+                <Button 
+                  variant="ghost" 
                   onClick={() => navigate("/auth")}
                   className="text-garden-text hover:text-garden-primary"
                 >
@@ -90,9 +98,11 @@ const Homepage = () => {
                   <div className="mt-3 sm:mt-0 sm:ml-3">
                     <Button 
                       variant="outline"
+                      onClick={() => navigate("/explore")}
                       className="w-full flex items-center justify-center px-8 py-3 text-base font-medium border-garden-primary text-garden-primary hover:bg-garden-primary hover:text-white md:py-4 md:text-lg md:px-10"
                     >
-                      View Demo
+                      <Search className="mr-2 w-5 h-5" />
+                      Explore Gardens
                     </Button>
                   </div>
                 </div>
