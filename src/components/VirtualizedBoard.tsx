@@ -2,7 +2,6 @@
 import React from 'react';
 import { DndContext, DragEndEvent, DragStartEvent, DragMoveEvent } from "@dnd-kit/core";
 import { Widget } from "@/types";
-import { useBoardVirtualization } from '@/hooks/useBoardVirtualization';
 import WidgetRow from '@/components/board/WidgetRow';
 
 interface VirtualizedBoardProps {
@@ -32,19 +31,15 @@ const VirtualizedBoard: React.FC<VirtualizedBoardProps> = ({
   draggedWidgets = new Map(),
   readonly = false,
 }) => {
-  const { parentRef, rowVirtualizer, widgetRows, ROW_HEIGHT } = useBoardVirtualization({ widgets });
-
   console.log('VirtualizedBoard rendering with widgets:', widgets.length);
-  console.log('Widget rows:', widgetRows.length);
 
   return (
     <div 
-      ref={parentRef}
       className="cork-board board-canvas relative w-full h-[calc(100vh-64px)] bg-cork-pattern select-none overflow-hidden"
       style={{ 
-        contain: 'layout style paint',
         backgroundImage: 'radial-gradient(circle at 20px 20px, #8B4513 2px, transparent 2px)',
-        backgroundSize: '40px 40px'
+        backgroundSize: '40px 40px',
+        backgroundColor: '#D2B48C'
       }}
     >
       <DndContext 
@@ -53,44 +48,17 @@ const VirtualizedBoard: React.FC<VirtualizedBoardProps> = ({
         onDragMove={readonly ? () => {} : onDragMove}
         onDragEnd={readonly ? () => {} : onDragEnd}
       >
-        <div
-          style={{
-            height: `${Math.max(rowVirtualizer.getTotalSize(), window.innerHeight - 64)}px`,
-            width: '100%',
-            position: 'relative',
-            minHeight: '100%',
-          }}
-        >
-          {rowVirtualizer.getVirtualItems().map(virtualRow => {
-            const rowWidgets = widgetRows[virtualRow.index] || [];
-            
-            console.log(`Rendering virtual row ${virtualRow.index} with ${rowWidgets.length} widgets`);
-            
-            return (
-              <div
-                key={virtualRow.index}
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  width: '100%',
-                  height: `${virtualRow.size}px`,
-                  transform: `translateY(${virtualRow.start}px)`,
-                }}
-              >
-                <WidgetRow
-                  widgets={rowWidgets}
-                  rowHeight={virtualRow.size}
-                  selectedWidgetId={selectedWidgetId}
-                  onWidgetSelect={onWidgetSelect}
-                  onUpdateWidget={onUpdateWidget}
-                  onUpdateWidgetSettings={onUpdateWidgetSettings}
-                  draggedWidgets={draggedWidgets}
-                  readonly={readonly}
-                />
-              </div>
-            );
-          })}
+        <div className="relative w-full h-full">
+          <WidgetRow
+            widgets={widgets}
+            rowHeight={0}
+            selectedWidgetId={selectedWidgetId}
+            onWidgetSelect={onWidgetSelect}
+            onUpdateWidget={onUpdateWidget}
+            onUpdateWidgetSettings={onUpdateWidgetSettings}
+            draggedWidgets={draggedWidgets}
+            readonly={readonly}
+          />
         </div>
       </DndContext>
     </div>

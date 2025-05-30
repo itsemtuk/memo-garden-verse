@@ -28,7 +28,6 @@ const DraggableWidget: React.FC<{
     attributes,
     listeners,
     setNodeRef,
-    transform,
     isDragging,
   } = useDraggable({
     id: widget.id,
@@ -38,18 +37,17 @@ const DraggableWidget: React.FC<{
   // Use draggedPosition if available (during drag), otherwise use widget position
   const currentPosition = draggedPosition || widget.position;
   
-  console.log(`Widget ${widget.id} position:`, currentPosition, 'draggedPosition:', draggedPosition, 'isDragging:', isDragging);
+  console.log(`Widget ${widget.id} rendered at position:`, currentPosition, 'isDragging:', isDragging);
 
   return (
     <div
       ref={setNodeRef}
-      className={`absolute transition-opacity ${isDragging ? 'opacity-50 z-50' : ''} ${readonly ? '' : 'cursor-move'}`}
+      className={`absolute ${isDragging ? 'opacity-50 z-[1000]' : ''} ${readonly ? '' : 'cursor-move'}`}
       style={{
         left: `${currentPosition.x}px`,
         top: `${currentPosition.y}px`,
         zIndex: isDragging ? 1000 : (widget.settings?.zIndex || 1),
         transform: `rotate(${widget.rotation || 0}deg)`,
-        // Don't apply dnd-kit transform here - it causes double transformation
       }}
       {...attributes}
       {...(readonly ? {} : listeners)}
@@ -67,7 +65,6 @@ const DraggableWidget: React.FC<{
 
 const WidgetRow: React.FC<WidgetRowProps> = ({
   widgets,
-  rowHeight,
   selectedWidgetId,
   onWidgetSelect,
   onUpdateWidget,
@@ -78,11 +75,9 @@ const WidgetRow: React.FC<WidgetRowProps> = ({
   console.log(`WidgetRow rendering ${widgets.length} widgets`);
   
   return (
-    <div className="relative w-full" style={{ height: `${rowHeight}px` }}>
+    <>
       {widgets.map((widget) => {
         const draggedPosition = draggedWidgets.get(widget.id);
-        
-        console.log(`Rendering widget ${widget.id} in row, position:`, widget.position, 'dragged position:', draggedPosition);
         
         return (
           <DraggableWidget
@@ -97,7 +92,7 @@ const WidgetRow: React.FC<WidgetRowProps> = ({
           />
         );
       })}
-    </div>
+    </>
   );
 };
 
