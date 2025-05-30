@@ -39,28 +39,33 @@ const DraggableWidget: React.FC<{
   
   console.log(`Widget ${widget.id} rendered at position:`, currentPosition, 'isDragging:', isDragging, 'draggedPosition:', draggedPosition);
 
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!readonly) {
+      onSelect();
+    }
+  };
+
   return (
     <div
       ref={setNodeRef}
-      className={`absolute transition-none ${isDragging ? 'opacity-50 z-[1000]' : ''} ${readonly ? '' : 'cursor-move'}`}
+      className={`absolute ${isDragging ? 'opacity-70 z-[1000]' : ''} ${readonly ? '' : 'cursor-move'}`}
       style={{
         left: `${currentPosition.x}px`,
         top: `${currentPosition.y}px`,
         zIndex: isDragging ? 1000 : (widget.settings?.zIndex || 1),
         transform: `rotate(${widget.rotation || 0}deg)`,
         pointerEvents: 'auto',
+        transition: isDragging ? 'none' : 'all 0.2s ease',
       }}
       {...attributes}
       {...(readonly ? {} : listeners)}
-      onClick={(e) => {
-        e.stopPropagation();
-        onSelect();
-      }}
+      onClick={handleClick}
     >
       <WidgetRenderer
         widget={widget}
         isSelected={isSelected}
-        onClick={onSelect}
+        onClick={handleClick}
         onUpdate={onUpdateContent}
         onUpdateSettings={onUpdateSettings}
       />

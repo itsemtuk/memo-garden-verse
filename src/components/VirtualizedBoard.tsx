@@ -44,9 +44,9 @@ const VirtualizedBoard: React.FC<VirtualizedBoardProps> = ({
     >
       <DndContext 
         sensors={readonly ? [] : sensors} 
-        onDragStart={readonly ? () => {} : onDragStart}
-        onDragMove={readonly ? () => {} : onDragMove}
-        onDragEnd={readonly ? () => {} : onDragEnd}
+        onDragStart={readonly ? undefined : onDragStart}
+        onDragMove={readonly ? undefined : onDragMove}
+        onDragEnd={readonly ? undefined : onDragEnd}
       >
         <div className="relative w-full h-full">
           <WidgetRow
