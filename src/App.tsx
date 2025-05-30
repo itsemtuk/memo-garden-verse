@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import Homepage from "./pages/Homepage";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
@@ -20,9 +21,10 @@ function App() {
           <Toaster />
           <Router>
             <Routes>
+              <Route path="/" element={<Homepage />} />
               <Route path="/auth" element={<Auth />} />
               <Route
-                path="/"
+                path="/app"
                 element={
                   <ProtectedRoute>
                     <Index />
