@@ -1,6 +1,6 @@
+
 import React from 'react';
-import { render } from '@/test/test-utils';
-import { screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import WidgetRow from '../WidgetRow';
 import { Widget } from '@/types';
 
