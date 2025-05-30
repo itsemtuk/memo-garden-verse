@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { Board as BoardType } from "@/types";
+import { Board as BoardType, Widget } from "@/types";
 import Board from "@/components/Board";
 import NavBar from "@/components/NavBar";
 import BoardsList from "@/components/BoardsList";
@@ -17,6 +17,21 @@ const Index = () => {
 
   const currentBoard = boards.find(board => board.id === currentBoardId) || boards[0];
 
+  // Transform database board to our Board type
+  const transformDbBoard = (dbBoard: any): BoardType => {
+    return {
+      id: dbBoard.id,
+      name: dbBoard.name,
+      description: dbBoard.description || "A new board for organizing thoughts and ideas",
+      is_public: dbBoard.is_public || false,
+      owner_id: dbBoard.owner_id,
+      collaborators: dbBoard.collaborators || [],
+      widgets: Array.isArray(dbBoard.widgets) ? dbBoard.widgets : [],
+      created_at: dbBoard.created_at,
+      updated_at: dbBoard.updated_at,
+    };
+  };
+
   // Fetch user's boards from database
   const fetchBoards = async () => {
     if (!user) return;
@@ -31,8 +46,9 @@ const Index = () => {
       if (error) throw error;
 
       if (data && data.length > 0) {
-        setBoards(data);
-        setCurrentBoardId(data[0].id);
+        const transformedBoards = data.map(transformDbBoard);
+        setBoards(transformedBoards);
+        setCurrentBoardId(transformedBoards[0].id);
       } else {
         // Create a default board if none exist
         await handleCreateBoard("My Garden Board");
@@ -77,8 +93,9 @@ const Index = () => {
 
       if (error) throw error;
 
-      setBoards((prevBoards) => [data, ...prevBoards]);
-      setCurrentBoardId(data.id);
+      const transformedBoard = transformDbBoard(data);
+      setBoards((prevBoards) => [transformedBoard, ...prevBoards]);
+      setCurrentBoardId(transformedBoard.id);
       setShowBoards(false);
     } catch (error) {
       console.error('Error creating board:', error);
