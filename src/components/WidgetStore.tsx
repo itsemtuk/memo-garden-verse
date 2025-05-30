@@ -9,7 +9,8 @@ import { v4 as uuidv4 } from "uuid";
 import { useFileUpload } from "@/hooks/useFileUpload";
 import { 
   Cloud, Leaf, ShoppingCart, StickyNote, Image, Plus, Calendar, 
-  ListTodo, FileText, Timer, Target, Newspaper, Quote
+  ListTodo, FileText, Timer, Target, Newspaper, Quote, Smile,
+  Bookmark, File, Music, ChefHat, Activity, Clock
 } from "lucide-react";
 import { 
   noteContentSchema, 
@@ -145,6 +146,69 @@ const WidgetStore = ({ onAddWidget, centerPosition, boardId }: WidgetStoreProps)
       icon: Quote,
       description: "Inspirational quotes",
       color: "bg-purple-100 hover:bg-purple-200"
+    },
+    { 
+      id: "mood_tracker" as WidgetType, 
+      label: "Mood Tracker", 
+      icon: Smile,
+      description: "Log and visualize daily moods",
+      color: "bg-pink-100 hover:bg-pink-200"
+    },
+    { 
+      id: "goal_tracker" as WidgetType, 
+      label: "Goal Tracker", 
+      icon: Target,
+      description: "Set and monitor progress toward goals",
+      color: "bg-blue-100 hover:bg-blue-200"
+    },
+    { 
+      id: "bookmark_manager" as WidgetType, 
+      label: "Bookmark Manager", 
+      icon: Bookmark,
+      description: "Save and organize useful links",
+      color: "bg-orange-100 hover:bg-orange-200"
+    },
+    { 
+      id: "file_attachment" as WidgetType, 
+      label: "File Attachments", 
+      icon: File,
+      description: "Upload and preview documents",
+      color: "bg-gray-100 hover:bg-gray-200"
+    },
+    { 
+      id: "music_player" as WidgetType, 
+      label: "Music Player", 
+      icon: Music,
+      description: "Embed music or playlists",
+      color: "bg-purple-100 hover:bg-purple-200"
+    },
+    { 
+      id: "recipe_planner" as WidgetType, 
+      label: "Recipe Planner", 
+      icon: ChefHat,
+      description: "Plan meals or store favorite recipes",
+      color: "bg-orange-100 hover:bg-orange-200"
+    },
+    { 
+      id: "fitness_tracker" as WidgetType, 
+      label: "Fitness Tracker", 
+      icon: Activity,
+      description: "Log workouts and track fitness goals",
+      color: "bg-green-100 hover:bg-green-200"
+    },
+    { 
+      id: "weather_extended" as WidgetType, 
+      label: "Extended Weather", 
+      icon: Cloud,
+      description: "Multi-day weather forecast",
+      color: "bg-sky-100 hover:bg-sky-200"
+    },
+    { 
+      id: "countdown_timer" as WidgetType, 
+      label: "Countdown Timer", 
+      icon: Clock,
+      description: "Track time to important dates",
+      color: "bg-red-100 hover:bg-red-200"
     },
   ];
 
@@ -373,6 +437,166 @@ const WidgetStore = ({ onAddWidget, centerPosition, boardId }: WidgetStoreProps)
             updatedAt: now,
           };
           break;
+
+        case "mood_tracker":
+          newWidget = {
+            id: uuidv4(),
+            type: "mood_tracker",
+            content: "mood_tracker",
+            position: {
+              x: centerPosition.x - 140,
+              y: centerPosition.y - 160,
+            },
+            rotation: randomRotation,
+            size: { width: 280, height: 320 },
+            settings: { moods: [] },
+            createdAt: now,
+            updatedAt: now,
+          };
+          break;
+
+        case "goal_tracker":
+          newWidget = {
+            id: uuidv4(),
+            type: "goal_tracker",
+            content: "goal_tracker",
+            position: {
+              x: centerPosition.x - 150,
+              y: centerPosition.y - 175,
+            },
+            rotation: randomRotation,
+            size: { width: 300, height: 350 },
+            settings: { goals: [] },
+            createdAt: now,
+            updatedAt: now,
+          };
+          break;
+
+        case "bookmark_manager":
+          newWidget = {
+            id: uuidv4(),
+            type: "bookmark_manager",
+            content: "bookmark_manager",
+            position: {
+              x: centerPosition.x - 160,
+              y: centerPosition.y - 200,
+            },
+            rotation: randomRotation,
+            size: { width: 320, height: 400 },
+            settings: { bookmarks: [] },
+            createdAt: now,
+            updatedAt: now,
+          };
+          break;
+
+        case "file_attachment":
+          newWidget = {
+            id: uuidv4(),
+            type: "file_attachment",
+            content: "file_attachment",
+            position: {
+              x: centerPosition.x - 160,
+              y: centerPosition.y - 175,
+            },
+            rotation: randomRotation,
+            size: { width: 320, height: 350 },
+            settings: { files: [] },
+            createdAt: now,
+            updatedAt: now,
+          };
+          break;
+
+        case "music_player":
+          newWidget = {
+            id: uuidv4(),
+            type: "music_player",
+            content: "music_player",
+            position: {
+              x: centerPosition.x - 150,
+              y: centerPosition.y - 125,
+            },
+            rotation: randomRotation,
+            size: { width: 300, height: 250 },
+            settings: { playlist: [], volume: [50] },
+            createdAt: now,
+            updatedAt: now,
+          };
+          break;
+
+        case "recipe_planner":
+          newWidget = {
+            id: uuidv4(),
+            type: "recipe_planner",
+            content: "recipe_planner",
+            position: {
+              x: centerPosition.x - 160,
+              y: centerPosition.y - 200,
+            },
+            rotation: randomRotation,
+            size: { width: 320, height: 400 },
+            settings: { recipes: [] },
+            createdAt: now,
+            updatedAt: now,
+          };
+          break;
+
+        case "fitness_tracker":
+          newWidget = {
+            id: uuidv4(),
+            type: "fitness_tracker",
+            content: "fitness_tracker",
+            position: {
+              x: centerPosition.x - 150,
+              y: centerPosition.y - 175,
+            },
+            rotation: randomRotation,
+            size: { width: 300, height: 350 },
+            settings: { 
+              workouts: [],
+              dailyGoals: {
+                steps: { current: 0, target: 10000 },
+                calories: { current: 0, target: 2000 },
+                water: { current: 0, target: 8 }
+              }
+            },
+            createdAt: now,
+            updatedAt: now,
+          };
+          break;
+
+        case "weather_extended":
+          newWidget = {
+            id: uuidv4(),
+            type: "weather_extended",
+            content: "weather_extended",
+            position: {
+              x: centerPosition.x - 160,
+              y: centerPosition.y - 140,
+            },
+            rotation: randomRotation,
+            size: { width: 320, height: 280 },
+            settings: { location: "Default City" },
+            createdAt: now,
+            updatedAt: now,
+          };
+          break;
+
+        case "countdown_timer":
+          newWidget = {
+            id: uuidv4(),
+            type: "countdown_timer",
+            content: "countdown_timer",
+            position: {
+              x: centerPosition.x - 150,
+              y: centerPosition.y - 175,
+            },
+            rotation: randomRotation,
+            size: { width: 300, height: 350 },
+            settings: { countdowns: [] },
+            createdAt: now,
+            updatedAt: now,
+          };
+          break;
       }
 
       if (newWidget) {
@@ -416,7 +640,7 @@ const WidgetStore = ({ onAddWidget, centerPosition, boardId }: WidgetStoreProps)
     if (!selectedWidget) return null;
 
     // For new widgets that don't need forms, show simple info
-    if (['calendar', 'todo_list', 'rich_text', 'timer', 'habit_tracker', 'news_feed', 'quotes'].includes(selectedWidget)) {
+    if (['calendar', 'todo_list', 'rich_text', 'timer', 'habit_tracker', 'news_feed', 'quotes', 'mood_tracker', 'goal_tracker', 'bookmark_manager', 'file_attachment', 'music_player', 'recipe_planner', 'fitness_tracker', 'weather_extended', 'countdown_timer'].includes(selectedWidget)) {
       const widgetInfo = widgetTypes.find(w => w.id === selectedWidget);
       const Icon = widgetInfo?.icon || StickyNote;
       
@@ -592,6 +816,15 @@ const WidgetStore = ({ onAddWidget, centerPosition, boardId }: WidgetStoreProps)
       case "habit_tracker":
       case "news_feed":
       case "quotes":
+      case "mood_tracker":
+      case "goal_tracker":
+      case "bookmark_manager":
+      case "file_attachment":
+      case "music_player":
+      case "recipe_planner":
+      case "fitness_tracker":
+      case "weather_extended":
+      case "countdown_timer":
         return true;
       default:
         return false;

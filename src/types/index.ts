@@ -1,4 +1,4 @@
-export type WidgetType = 'note' | 'image' | 'weather' | 'plant_reminder' | 'shopping_list' | 'social' | 'calendar' | 'todo_list' | 'rich_text' | 'timer' | 'habit_tracker' | 'news_feed' | 'quotes';
+export type WidgetType = 'note' | 'image' | 'weather' | 'plant_reminder' | 'shopping_list' | 'social' | 'calendar' | 'todo_list' | 'rich_text' | 'timer' | 'habit_tracker' | 'news_feed' | 'quotes' | 'mood_tracker' | 'goal_tracker' | 'bookmark_manager' | 'file_attachment' | 'music_player' | 'recipe_planner' | 'fitness_tracker' | 'weather_extended' | 'countdown_timer';
 
 export interface Widget {
   id: string;

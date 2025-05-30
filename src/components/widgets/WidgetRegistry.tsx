@@ -12,6 +12,15 @@ import TimerWidget from "./TimerWidget";
 import HabitTrackerWidget from "./HabitTrackerWidget";
 import NewsFeedWidget from "./NewsFeedWidget";
 import QuotesWidget from "./QuotesWidget";
+import MoodTrackerWidget from "./MoodTrackerWidget";
+import GoalTrackerWidget from "./GoalTrackerWidget";
+import BookmarkManagerWidget from "./BookmarkManagerWidget";
+import FileAttachmentWidget from "./FileAttachmentWidget";
+import MusicPlayerWidget from "./MusicPlayerWidget";
+import RecipePlannerWidget from "./RecipePlannerWidget";
+import FitnessTrackerWidget from "./FitnessTrackerWidget";
+import WeatherExtendedWidget from "./WeatherExtendedWidget";
+import CountdownTimerWidget from "./CountdownTimerWidget";
 
 interface WidgetRendererProps {
   widget: Widget;
@@ -34,6 +43,15 @@ const widgetRegistry = {
   habit_tracker: HabitTrackerWidget,
   news_feed: NewsFeedWidget,
   quotes: QuotesWidget,
+  mood_tracker: MoodTrackerWidget,
+  goal_tracker: GoalTrackerWidget,
+  bookmark_manager: BookmarkManagerWidget,
+  file_attachment: FileAttachmentWidget,
+  music_player: MusicPlayerWidget,
+  recipe_planner: RecipePlannerWidget,
+  fitness_tracker: FitnessTrackerWidget,
+  weather_extended: WeatherExtendedWidget,
+  countdown_timer: CountdownTimerWidget,
   social: NoteWidget, // Placeholder for now
 };
 
