@@ -1,9 +1,9 @@
 
-import React, { useRef, useMemo } from 'react';
-import { useVirtualizer } from '@tanstack/react-virtual';
-import { WidgetRenderer } from "@/components/widgets/WidgetRegistry";
-import { Widget } from "@/types";
+import React from 'react';
 import { DndContext, DragEndEvent, DragStartEvent, DragMoveEvent } from "@dnd-kit/core";
+import { Widget } from "@/types";
+import { useBoardVirtualization } from '@/hooks/useBoardVirtualization';
+import WidgetRow from '@/components/board/WidgetRow';
 
 interface VirtualizedBoardProps {
   widgets: Widget[];
@@ -28,43 +28,7 @@ const VirtualizedBoard: React.FC<VirtualizedBoardProps> = ({
   onUpdateWidget,
   onUpdateWidgetSettings,
 }) => {
-  const parentRef = useRef<HTMLDivElement>(null);
-
-  // Sort widgets by z-index for proper rendering order
-  const sortedWidgets = useMemo(() => 
-    [...widgets].sort((a, b) => (a.settings?.zIndex || 0) - (b.settings?.zIndex || 0)), 
-    [widgets]
-  );
-
-  // Group widgets by their Y position for better virtualization
-  const widgetRows = useMemo(() => {
-    const VIRTUAL_ROW_HEIGHT = 300; // Height of each virtual row
-    const rowMap = new Map<number, Widget[]>();
-
-    sortedWidgets.forEach(widget => {
-      const rowIndex = Math.floor(widget.position.y / VIRTUAL_ROW_HEIGHT);
-      if (!rowMap.has(rowIndex)) {
-        rowMap.set(rowIndex, []);
-      }
-      rowMap.get(rowIndex)!.push(widget);
-    });
-
-    // Convert to array format for virtualizer
-    const maxRow = Math.max(...Array.from(rowMap.keys()), 0);
-    const rows: Widget[][] = [];
-    for (let i = 0; i <= maxRow; i++) {
-      rows[i] = rowMap.get(i) || [];
-    }
-
-    return rows;
-  }, [sortedWidgets]);
-
-  const rowVirtualizer = useVirtualizer({
-    count: widgetRows.length,
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => 300, // Virtual row height
-    overscan: 3, // Render 3 extra rows above and below viewport
-  });
+  const { parentRef, rowVirtualizer, widgetRows, ROW_HEIGHT } = useBoardVirtualization({ widgets });
 
   return (
     <div 
@@ -100,26 +64,14 @@ const VirtualizedBoard: React.FC<VirtualizedBoardProps> = ({
                   transform: `translateY(${virtualRow.start}px)`,
                 }}
               >
-                {rowWidgets.map((widget) => (
-                  <div
-                    key={`${widget.id}-${widget.updatedAt?.getTime() || Date.now()}`}
-                    style={{
-                      position: 'absolute',
-                      left: `${widget.position.x}px`,
-                      top: `${widget.position.y % 300}px`, // Position within the virtual row
-                      transform: `rotate(${widget.rotation || 0}deg)`,
-                      zIndex: widget.settings?.zIndex || 1,
-                    }}
-                  >
-                    <WidgetRenderer
-                      widget={widget}
-                      isSelected={selectedWidgetId === widget.id}
-                      onClick={() => onWidgetSelect(widget.id)}
-                      onUpdate={(content) => onUpdateWidget(widget.id, content)}
-                      onUpdateSettings={(settings) => onUpdateWidgetSettings && onUpdateWidgetSettings(widget.id, settings)}
-                    />
-                  </div>
-                ))}
+                <WidgetRow
+                  widgets={rowWidgets}
+                  rowHeight={ROW_HEIGHT}
+                  selectedWidgetId={selectedWidgetId}
+                  onWidgetSelect={onWidgetSelect}
+                  onUpdateWidget={onUpdateWidget}
+                  onUpdateWidgetSettings={onUpdateWidgetSettings}
+                />
               </div>
             );
           })}
