@@ -13,7 +13,7 @@ Inspired by the natural way people use physical notice boards, MemoGarden brings
 ## Evolution from Previous Projects
 
 - **Reactions** ([GitHub](https://github.com/Aliyah2014/Reactions)) introduced a React-based drag-and-drop mood board where users curated images and notes to inspire creativity and productivity.
-- **Forget-Me-Not** ([GitHub](https://github.com/itsemtuk/project-one)) focused on educational flashcards to aid memorization and learning efficiency.
+- **Forget-Me-Not** ([GitHub](https://github.com/itsemtuk/project-one)) focused on reminders using api for watering and maintaining plants.
 
 MemoGarden is a continuation and expansion of these foundations, combining drag-and-drop interactivity with collaborative and public board features, creating a versatile tool for both personal and group use.
 
