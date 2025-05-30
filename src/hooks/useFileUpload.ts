@@ -2,60 +2,47 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { createUserFriendlyError } from '@/lib/errorHandling';
+import { validateImageFile } from '@/lib/validation';
 import { toast } from 'sonner';
-
-// File validation constants
-const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
 
 export const useFileUpload = (boardId: string) => {
   const [uploading, setUploading] = useState(false);
-
-  const validateFile = (file: File): void => {
-    // Check file type
-    if (!ALLOWED_FILE_TYPES.includes(file.type)) {
-      throw createUserFriendlyError('Invalid file type. Please upload a JPEG, PNG, GIF, or WebP image.');
-    }
-
-    // Check file size
-    if (file.size > MAX_FILE_SIZE) {
-      throw createUserFriendlyError('File is too large. Please upload an image smaller than 5MB.');
-    }
-
-    // Double-check extension (additional security)
-    const extension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
-    if (!ALLOWED_EXTENSIONS.includes(extension)) {
-      throw createUserFriendlyError('Invalid file extension. Please upload a valid image file.');
-    }
-
-    // Check filename for security (prevent path traversal)
-    if (file.name.includes('..') || file.name.includes('/') || file.name.includes('\\')) {
-      throw createUserFriendlyError('Invalid filename. Please rename your file and try again.');
-    }
-  };
 
   const uploadImage = async (file: File): Promise<string> => {
     try {
       setUploading(true);
       
       // Validate file before upload
-      validateFile(file);
+      const validation = validateImageFile(file);
+      if (!validation.isValid) {
+        throw createUserFriendlyError(validation.error || 'Invalid file');
+      }
       
       const fileExt = file.name.split('.').pop()?.toLowerCase();
-      if (!fileExt || !ALLOWED_EXTENSIONS.some(ext => ext.substring(1) === fileExt)) {
-        throw createUserFriendlyError('Invalid file extension detected.');
+      if (!fileExt) {
+        throw createUserFriendlyError('File must have a valid extension');
       }
 
-      // Generate secure filename
+      // Generate secure filename with board ID for proper RLS
       const fileName = `${crypto.randomUUID()}.${fileExt}`;
       const filePath = `${boardId}/${fileName}`;
+
+      // Verify user has access to this board before uploading
+      const { data: boardCheck } = await supabase
+        .from('boards')
+        .select('id')
+        .eq('id', boardId)
+        .maybeSingle();
+
+      if (!boardCheck) {
+        throw createUserFriendlyError('You do not have permission to upload to this board');
+      }
 
       const { data, error } = await supabase.storage
         .from('board-images')
         .upload(filePath, file, {
           cacheControl: '3600',
-          upsert: false // Prevent overwriting existing files
+          upsert: false
         });
 
       if (error) {
@@ -67,12 +54,14 @@ export const useFileUpload = (boardId: string) => {
           throw createUserFriendlyError('You do not have permission to upload files to this board.');
         } else if (error.message.includes('Payload too large')) {
           throw createUserFriendlyError('File is too large. Please upload a smaller image.');
+        } else if (error.message.includes('Invalid mime type')) {
+          throw createUserFriendlyError('Invalid file type. Please upload a valid image.');
         } else {
           throw createUserFriendlyError('Failed to upload image. Please try again.');
         }
       }
 
-      // Get the public URL
+      // Get the public URL (even for private buckets, this generates the URL)
       const { data: { publicUrl } } = supabase.storage
         .from('board-images')
         .getPublicUrl(filePath);
