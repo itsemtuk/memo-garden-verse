@@ -125,6 +125,20 @@ const Board = ({ boardId, onUpdate }: BoardProps) => {
     })
   );
 
+  // Constrain position to board boundaries
+  const constrainPosition = (x: number, y: number, widgetWidth = 200, widgetHeight = 100) => {
+    if (!boardRef.current) return { x, y };
+    
+    const boardRect = boardRef.current.getBoundingClientRect();
+    const maxX = boardRect.width - widgetWidth;
+    const maxY = boardRect.height - widgetHeight;
+    
+    return {
+      x: Math.max(0, Math.min(x, maxX)),
+      y: Math.max(0, Math.min(y, maxY))
+    };
+  };
+
   const handleDragStart = useCallback((event: DragStartEvent) => {
     const widgetId = event.active.id as string;
     const widget = widgets.find(w => w.id === widgetId);
@@ -135,7 +149,7 @@ const Board = ({ boardId, onUpdate }: BoardProps) => {
         startPosition: widget.position
       });
       setSelectedWidgetId(widgetId);
-      console.log('Drag started for widget:', widgetId);
+      console.log('Drag started for widget:', widgetId, 'at position:', widget.position);
     }
   }, [widgets]);
 
@@ -144,10 +158,20 @@ const Board = ({ boardId, onUpdate }: BoardProps) => {
       const newX = draggedWidget.startPosition.x + event.delta.x;
       const newY = draggedWidget.startPosition.y + event.delta.y;
       
+      // Get widget dimensions for better constraint calculation
+      const widget = widgets.find(w => w.id === draggedWidget.id);
+      const widgetWidth = typeof widget?.size?.width === 'string' ? 200 : (widget?.size?.width || 200);
+      const widgetHeight = typeof widget?.size?.height === 'string' ? 100 : (widget?.size?.height || 100);
+      
+      // Constrain to board boundaries
+      const constrainedPosition = constrainPosition(newX, newY, widgetWidth, widgetHeight);
+      
       // Update temporary drag positions for smooth animation
-      setDraggedWidgets(prev => new Map(prev.set(draggedWidget.id, { x: newX, y: newY })));
+      setDraggedWidgets(prev => new Map(prev.set(draggedWidget.id, constrainedPosition)));
+      
+      console.log('Drag move - widget:', draggedWidget.id, 'new position:', constrainedPosition);
     }
-  }, [draggedWidget]);
+  }, [draggedWidget, widgets, constrainPosition]);
 
   const handleDragEnd = useCallback(async (event: DragEndEvent) => {
     const { active, delta } = event;
@@ -162,22 +186,30 @@ const Board = ({ boardId, onUpdate }: BoardProps) => {
     const newX = draggedWidget.startPosition.x + delta.x;
     const newY = draggedWidget.startPosition.y + delta.y;
 
-    console.log('Drag end - widget:', widgetId, 'new position:', { newX, newY });
+    // Get widget dimensions for constraint calculation
+    const widget = widgets.find(w => w.id === widgetId);
+    const widgetWidth = typeof widget?.size?.width === 'string' ? 200 : (widget?.size?.width || 200);
+    const widgetHeight = typeof widget?.size?.height === 'string' ? 100 : (widget?.size?.height || 100);
+    
+    // Constrain final position to board boundaries
+    const constrainedPosition = constrainPosition(newX, newY, widgetWidth, widgetHeight);
+
+    console.log('Drag end - widget:', widgetId, 'final position:', constrainedPosition);
 
     try {
       // Clear temporary drag state immediately for responsiveness
       setDraggedWidgets(new Map());
       setDraggedWidget(null);
       
-      // Persist to database
-      await handleWidgetPositionChange(widgetId, newX, newY);
-      console.log('Widget position updated successfully');
+      // Persist to database with constrained position
+      await handleWidgetPositionChange(widgetId, constrainedPosition.x, constrainedPosition.y);
+      console.log('Widget position updated successfully to:', constrainedPosition);
     } catch (error) {
       console.error('Failed to update widget position:', error);
       // Revert on error by refreshing
       setDraggedWidgets(new Map());
     }
-  }, [draggedWidget, handleWidgetPositionChange]);
+  }, [draggedWidget, handleWidgetPositionChange, widgets, constrainPosition]);
 
   const handleBoardClick = (e: React.MouseEvent) => {
     // Only deselect if clicking on the board itself, not on widgets
@@ -225,13 +257,27 @@ const Board = ({ boardId, onUpdate }: BoardProps) => {
 
   const handleWidgetAdded = useCallback((widget: Widget) => {
     console.log('Widget being added to board:', widget);
-    handleAddWidget(widget);
+    
+    // Ensure widget is placed within board boundaries
+    const constrainedPosition = constrainPosition(
+      widget.position.x, 
+      widget.position.y, 
+      typeof widget.size?.width === 'string' ? 200 : (widget.size?.width || 200),
+      typeof widget.size?.height === 'string' ? 100 : (widget.size?.height || 100)
+    );
+    
+    const constrainedWidget = {
+      ...widget,
+      position: constrainedPosition
+    };
+    
+    handleAddWidget(constrainedWidget);
     setShowMobileWidgetStore(false);
-  }, [handleAddWidget]);
+  }, [handleAddWidget, constrainPosition]);
 
   if (loading) {
     return (
-      <div className="cork-board relative w-full h-[calc(100vh-64px)] overflow-auto flex items-center justify-center">
+      <div className="cork-board relative w-full h-[calc(100vh-64px)] overflow-hidden flex items-center justify-center">
         <div className="text-garden-text">Loading board...</div>
       </div>
     );
@@ -245,12 +291,12 @@ const Board = ({ boardId, onUpdate }: BoardProps) => {
         isMobile 
           ? 'h-[calc(100vh-56px)] touch-pan-x touch-pan-y' 
           : 'h-[calc(100vh-64px)]'
-      }`}
+      } overflow-hidden`}
       onClick={handleBoardClick}
       ref={boardRef}
     >
       {widgets.length === 0 && (
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-gray-500 text-center">
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-gray-500 text-center z-10">
           <p className="text-lg mb-2">No widgets on this board yet</p>
           <p className="text-sm">Click the + button to add your first widget</p>
         </div>

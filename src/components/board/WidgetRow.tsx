@@ -2,7 +2,7 @@
 import React from 'react';
 import { useDraggable } from "@dnd-kit/core";
 import { Widget } from '@/types';
-import { WidgetRenderer } from '@/components/widgets/WidgetRegistry';
+import { WidgetRenderer } from '@/components/widgets/components/WidgetRenderer';
 
 interface WidgetRowProps {
   widgets: Widget[];
@@ -35,25 +35,21 @@ const DraggableWidget: React.FC<{
     disabled: readonly,
   });
 
-  const position = draggedPosition || widget.position;
+  // Use draggedPosition if available (during drag), otherwise use widget position
+  const currentPosition = draggedPosition || widget.position;
   
-  // Apply transform for smooth dragging
-  const dragTransform = transform ? {
-    transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
-  } : undefined;
-
-  console.log(`Rendering draggable widget ${widget.id} at position:`, position, 'with transform:', dragTransform);
+  console.log(`Widget ${widget.id} position:`, currentPosition, 'draggedPosition:', draggedPosition, 'isDragging:', isDragging);
 
   return (
     <div
       ref={setNodeRef}
-      className={`absolute ${isDragging ? 'opacity-75 z-50' : ''} ${readonly ? '' : 'cursor-move'}`}
+      className={`absolute transition-opacity ${isDragging ? 'opacity-50 z-50' : ''} ${readonly ? '' : 'cursor-move'}`}
       style={{
-        left: `${position.x}px`,
-        top: `${position.y}px`,
+        left: `${currentPosition.x}px`,
+        top: `${currentPosition.y}px`,
         zIndex: isDragging ? 1000 : (widget.settings?.zIndex || 1),
         transform: `rotate(${widget.rotation || 0}deg)`,
-        ...dragTransform,
+        // Don't apply dnd-kit transform here - it causes double transformation
       }}
       {...attributes}
       {...(readonly ? {} : listeners)}
@@ -86,7 +82,7 @@ const WidgetRow: React.FC<WidgetRowProps> = ({
       {widgets.map((widget) => {
         const draggedPosition = draggedWidgets.get(widget.id);
         
-        console.log(`Rendering widget ${widget.id} in row, dragged position:`, draggedPosition);
+        console.log(`Rendering widget ${widget.id} in row, position:`, widget.position, 'dragged position:', draggedPosition);
         
         return (
           <DraggableWidget

@@ -10,18 +10,23 @@ export const useWidgetPositioning = (boardId: string, notesAsWidgets: any[]) => 
   const { updateNotePosition } = useNotes(boardId);
 
   const handleWidgetPositionChange = useCallback(async (widgetId: string, x: number, y: number, userId?: string) => {
-    const positionValidation = validatePosition(x, y, userId);
+    // Round positions to prevent floating point issues
+    const roundedX = Math.round(x);
+    const roundedY = Math.round(y);
+    
+    const positionValidation = validatePosition(roundedX, roundedY, userId);
     if (!positionValidation.valid) {
+      console.warn('Position validation failed:', { x: roundedX, y: roundedY, validation: positionValidation });
       return;
     }
 
-    console.log('Position change request:', widgetId, 'from UI to:', { x, y }, 'rounded to:', { x: positionValidation.x, y: positionValidation.y });
+    console.log('Position change request:', widgetId, 'from UI to:', { x: roundedX, y: roundedY }, 'validated to:', { x: positionValidation.x, y: positionValidation.y });
 
     const isNote = notesAsWidgets.some(w => w.id === widgetId);
     
     if (isNote) {
       try {
-        console.log('Updating database note position');
+        console.log('Updating database note position to:', { x: positionValidation.x, y: positionValidation.y });
         await updateNotePosition(widgetId, positionValidation.x, positionValidation.y);
         console.log('Database note position updated successfully');
       } catch (error) {

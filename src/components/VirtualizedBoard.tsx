@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { DndContext, DragEndEvent, DragStartEvent, DragMoveEvent, useDraggable } from "@dnd-kit/core";
+import { DndContext, DragEndEvent, DragStartEvent, DragMoveEvent } from "@dnd-kit/core";
 import { Widget } from "@/types";
 import { useBoardVirtualization } from '@/hooks/useBoardVirtualization';
 import WidgetRow from '@/components/board/WidgetRow';
@@ -40,8 +40,12 @@ const VirtualizedBoard: React.FC<VirtualizedBoardProps> = ({
   return (
     <div 
       ref={parentRef}
-      className="cork-board board-canvas relative w-full overflow-auto select-none h-[calc(100vh-64px)]"
-      style={{ contain: 'layout style paint' }}
+      className="cork-board board-canvas relative w-full h-[calc(100vh-64px)] bg-cork-pattern select-none overflow-hidden"
+      style={{ 
+        contain: 'layout style paint',
+        backgroundImage: 'radial-gradient(circle at 20px 20px, #8B4513 2px, transparent 2px)',
+        backgroundSize: '40px 40px'
+      }}
     >
       <DndContext 
         sensors={readonly ? [] : sensors} 
@@ -51,9 +55,10 @@ const VirtualizedBoard: React.FC<VirtualizedBoardProps> = ({
       >
         <div
           style={{
-            height: `${rowVirtualizer.getTotalSize()}px`,
+            height: `${Math.max(rowVirtualizer.getTotalSize(), window.innerHeight - 64)}px`,
             width: '100%',
             position: 'relative',
+            minHeight: '100%',
           }}
         >
           {rowVirtualizer.getVirtualItems().map(virtualRow => {
