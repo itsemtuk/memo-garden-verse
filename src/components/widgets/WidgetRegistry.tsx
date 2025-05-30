@@ -116,12 +116,24 @@ export const WidgetRenderer = ({ widget, isSelected, onClick, onUpdate, onUpdate
     );
   }
 
+  // Handle translator widget specifically - it uses onUpdate instead of onUpdateSettings
+  if (widget.type === 'translator') {
+    return (
+      <TranslatorWidget
+        widget={widget}
+        isSelected={isSelected}
+        onClick={onClick}
+        onUpdate={onUpdateSettings || (() => {})}
+      />
+    );
+  }
+
   // Handle specialized widgets that use settings-based updates
   if (['calendar', 'todo_list', 'shopping_list', 'timer', 'habit_tracker', 'mood_tracker', 
        'goal_tracker', 'bookmark_manager', 'file_attachment', 'music_player', 'recipe_planner',
        'fitness_tracker', 'countdown_timer', 'whiteboard', 'stock_ticker', 'currency_converter',
        'weather', 'weather_extended', 'plant_reminder', 'rich_text', 'news_feed', 'quotes',
-       'translator', 'travel_planner', 'expense_tracker', 'contact_list', 'book_tracker', 
+       'travel_planner', 'expense_tracker', 'contact_list', 'book_tracker', 
        'flashcards', 'news_headlines'].includes(widget.type)) {
     return (
       <WidgetComponent
