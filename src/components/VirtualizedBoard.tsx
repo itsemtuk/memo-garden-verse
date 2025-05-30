@@ -19,39 +19,6 @@ interface VirtualizedBoardProps {
   readonly?: boolean;
 }
 
-const DraggableWidget = ({ widget, children, readonly }: {
-  widget: Widget;
-  children: React.ReactNode;
-  readonly?: boolean;
-}) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    isDragging,
-  } = useDraggable({
-    id: widget.id,
-    disabled: readonly,
-  });
-
-  const style = transform ? {
-    transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
-  } : undefined;
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      {...(readonly ? {} : listeners)}
-      className={`${isDragging ? 'opacity-50' : ''} ${readonly ? '' : 'cursor-move'}`}
-    >
-      {children}
-    </div>
-  );
-};
-
 const VirtualizedBoard: React.FC<VirtualizedBoardProps> = ({
   widgets,
   selectedWidgetId,
@@ -66,6 +33,9 @@ const VirtualizedBoard: React.FC<VirtualizedBoardProps> = ({
   readonly = false,
 }) => {
   const { parentRef, rowVirtualizer, widgetRows, ROW_HEIGHT } = useBoardVirtualization({ widgets });
+
+  console.log('VirtualizedBoard rendering with widgets:', widgets.length);
+  console.log('Widget rows:', widgetRows.length);
 
   return (
     <div 
@@ -89,6 +59,8 @@ const VirtualizedBoard: React.FC<VirtualizedBoardProps> = ({
           {rowVirtualizer.getVirtualItems().map(virtualRow => {
             const rowWidgets = widgetRows[virtualRow.index] || [];
             
+            console.log(`Rendering virtual row ${virtualRow.index} with ${rowWidgets.length} widgets`);
+            
             return (
               <div
                 key={virtualRow.index}
@@ -101,70 +73,16 @@ const VirtualizedBoard: React.FC<VirtualizedBoardProps> = ({
                   transform: `translateY(${virtualRow.start}px)`,
                 }}
               >
-                {/* Render widgets individually with drag capability */}
-                {rowWidgets.map((widget) => {
-                  const draggedPosition = draggedWidgets.get(widget.id);
-                  const position = draggedPosition || widget.position;
-                  
-                  return (
-                    <div
-                      key={widget.id}
-                      className="absolute"
-                      style={{
-                        left: `${position.x}px`,
-                        top: `${position.y}px`,
-                        zIndex: widget.settings?.zIndex || 1,
-                        transform: `rotate(${widget.rotation || 0}deg)`,
-                      }}
-                    >
-                      <DraggableWidget widget={widget} readonly={readonly}>
-                        <div
-                          onClick={() => !readonly && onWidgetSelect(widget.id)}
-                          className={selectedWidgetId === widget.id ? 'ring-2 ring-blue-500' : ''}
-                        >
-                          {widget.type === 'note' && (
-                            <div className="bg-yellow-100 p-3 rounded-lg shadow-md min-w-[200px] min-h-[100px]">
-                              <textarea 
-                                value={widget.content || ''}
-                                onChange={(e) => !readonly && onUpdateWidget(widget.id, e.target.value)}
-                                className="w-full h-full bg-transparent border-none resize-none outline-none text-sm"
-                                placeholder="Add your note..."
-                                readOnly={readonly}
-                                style={{
-                                  width: typeof widget.size?.width === 'string' ? 
-                                    widget.size.width : `${widget.size?.width || 200}px`,
-                                  height: typeof widget.size?.height === 'string' ? 
-                                    widget.size.height : `${widget.size?.height || 100}px`,
-                                }}
-                              />
-                            </div>
-                          )}
-                          {widget.type === 'image' && (
-                            <div 
-                              className="bg-white p-2 rounded-lg shadow-md flex items-center justify-center"
-                              style={{
-                                width: typeof widget.size?.width === 'string' ? 
-                                  widget.size.width : `${widget.size?.width || 200}px`,
-                                height: typeof widget.size?.height === 'string' ? 
-                                  widget.size.height : `${widget.size?.height || 150}px`,
-                              }}
-                            >
-                              {widget.content ? (
-                                <img 
-                                  src={widget.content} 
-                                  alt="Widget content" 
-                                  className="max-w-full max-h-full object-contain rounded"
-                                />
-                              ) : (
-                                <span className="text-gray-500 text-sm">No image</span>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      </DraggableWidget>
-                    </div>
-                  );
-                })}
+                <WidgetRow
+                  widgets={rowWidgets}
+                  rowHeight={virtualRow.size}
+                  selectedWidgetId={selectedWidgetId}
+                  onWidgetSelect={onWidgetSelect}
+                  onUpdateWidget={onUpdateWidget}
+                  onUpdateWidgetSettings={onUpdateWidgetSettings}
+                  draggedWidgets={draggedWidgets}
+                  readonly={readonly}
+                />
               </div>
             );
           })}

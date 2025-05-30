@@ -1,7 +1,5 @@
 
 import { Widget } from "@/types";
-import { useDraggable } from "@dnd-kit/core";
-import { CSS } from "@dnd-kit/utilities";
 import { useState, useRef, useEffect } from "react";
 import { noteContentSchema } from "@/lib/security";
 import { handleValidationError } from "@/lib/errorHandling";
@@ -21,16 +19,7 @@ const Note = ({ widget, isSelected, onClick, onUpdate }: NoteProps) => {
   const [hasChanges, setHasChanges] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
-    id: widget.id,
-    data: { widget },
-  });
-
-  const style = {
-    transform: CSS.Translate.toString(transform),
-    rotate: `${widget.rotation || 0}deg`,
-    zIndex: isDragging ? 1000 : (widget.settings?.zIndex || 1),
-  };
+  console.log('Note component rendering:', widget.id, 'content:', widget.content);
 
   // Update local content when widget content changes
   useEffect(() => {
@@ -104,24 +93,19 @@ const Note = ({ widget, isSelected, onClick, onUpdate }: NoteProps) => {
 
   return (
     <div
-      ref={setNodeRef}
-      className={`widget widget-note absolute transition-all duration-200 ${
-        isDragging ? 'dragging shadow-lg scale-105' : ''
-      } ${isSelected ? 'ring-2 ring-garden-primary' : ''}`}
+      className={`widget widget-note bg-yellow-100 rounded-lg shadow-md transition-all duration-200 relative ${
+        isSelected ? 'ring-2 ring-garden-primary' : ''
+      }`}
       style={{
-        ...style,
-        left: `${widget.position.x}px`,
-        top: `${widget.position.y}px`,
         width: widget.size?.width || "200px",
         height: widget.size?.height || "auto",
+        minHeight: "100px",
       }}
       onClick={(e) => {
         e.stopPropagation();
         onClick();
       }}
       onDoubleClick={handleDoubleClick}
-      {...attributes}
-      {...listeners}
     >
       <div className="widget-pin widget-pin-left"></div>
       <div className="widget-pin widget-pin-right"></div>
@@ -143,10 +127,10 @@ const Note = ({ widget, isSelected, onClick, onUpdate }: NoteProps) => {
       )}
       
       {isEditing ? (
-        <div className="relative">
+        <div className="relative p-3 h-full">
           <textarea
             ref={textareaRef}
-            className="w-full h-full bg-transparent border-none focus:outline-none resize-none min-h-[100px] p-2"
+            className="w-full h-full bg-transparent border-none focus:outline-none resize-none min-h-[70px]"
             value={noteContent}
             onChange={handleContentChange}
             onBlur={handleBlur}
@@ -165,7 +149,7 @@ const Note = ({ widget, isSelected, onClick, onUpdate }: NoteProps) => {
         </div>
       ) : (
         <div 
-          className="min-h-[100px] break-words font-handwriting p-2 cursor-text hover:bg-yellow-50 transition-colors"
+          className="min-h-[70px] break-words font-handwriting p-3 cursor-text hover:bg-yellow-50 transition-colors"
           onClick={handleEditClick}
         >
           {widget.content || (

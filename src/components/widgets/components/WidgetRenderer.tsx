@@ -28,6 +28,8 @@ export const WidgetRenderer = ({
   onUpdate, 
   onUpdateSettings 
 }: WidgetRendererProps) => {
+  console.log(`WidgetRenderer rendering widget type: ${widget.type}`, widget);
+  
   const WidgetComponent = widgetRegistry[widget.type as keyof typeof widgetRegistry];
   
   if (!WidgetComponent) {
@@ -48,7 +50,20 @@ export const WidgetRenderer = ({
     );
   }
 
-  // Handle content-based widgets (note, social, etc.)
+  // For note widgets, use the Note component directly
+  if (widget.type === 'note') {
+    console.log('Rendering note widget with Note component');
+    return (
+      <WidgetComponent
+        widget={widget}
+        isSelected={isSelected}
+        onClick={onClick}
+        onUpdate={onUpdate}
+      />
+    );
+  }
+
+  // Handle content-based widgets (social, etc.)
   if (CONTENT_WIDGETS.includes(widget.type)) {
     return renderNoteWidget({ widget, isSelected, onClick, onUpdate, onUpdateSettings });
   }
