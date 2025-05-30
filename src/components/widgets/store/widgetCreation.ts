@@ -98,6 +98,44 @@ export const createWidget = ({ type, formData, centerPosition }: CreateWidgetPar
         updatedAt: now,
       };
 
+    case "calendar":
+      return {
+        id: uuidv4(),
+        type: "calendar",
+        content: "calendar",
+        position: {
+          x: centerPosition.x - 140,
+          y: centerPosition.y - 160,
+        },
+        rotation: randomRotation,
+        size: { width: 280, height: 320 },
+        settings: {
+          events: [],
+          zIndex: 1,
+        },
+        createdAt: now,
+        updatedAt: now,
+      };
+
+    case "travel_planner":
+      return {
+        id: uuidv4(),
+        type: "travel_planner",
+        content: "travel_planner",
+        position: {
+          x: centerPosition.x - 150,
+          y: centerPosition.y - 200,
+        },
+        rotation: randomRotation,
+        size: { width: 300, height: 400 },
+        settings: {
+          items: [],
+          zIndex: 1,
+        },
+        createdAt: now,
+        updatedAt: now,
+      };
+
     // For all other widgets that don't need special form handling
     default:
       return {
@@ -110,7 +148,9 @@ export const createWidget = ({ type, formData, centerPosition }: CreateWidgetPar
         },
         rotation: randomRotation,
         size: { width: 320, height: 280 },
-        settings: {},
+        settings: {
+          zIndex: 1,
+        },
         createdAt: now,
         updatedAt: now,
       };

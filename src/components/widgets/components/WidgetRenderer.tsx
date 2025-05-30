@@ -60,8 +60,9 @@ export const WidgetRenderer = ({
     return renderTranslatorWidget({ widget, isSelected, onClick, onUpdate, onUpdateSettings });
   }
 
-  // Handle settings-based widgets
+  // Handle settings-based widgets (calendar, weather, etc.)
   if (SETTINGS_BASED_WIDGETS.includes(widget.type)) {
+    console.log(`Rendering settings-based widget: ${widget.type}`, widget);
     return (
       <WidgetComponent
         widget={widget}
@@ -73,6 +74,7 @@ export const WidgetRenderer = ({
   }
 
   // Fallback for any other widgets - only pass standard props
+  console.log(`Rendering fallback widget: ${widget.type}`, widget);
   return (
     <WidgetComponent
       widget={widget}

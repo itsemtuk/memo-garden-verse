@@ -258,7 +258,7 @@ export const useNotes = (boardId: string) => {
   // Convert notes to widgets format for compatibility with existing Board component
   const notesAsWidgets: Widget[] = notes.map(note => ({
     id: note.id,
-    type: note.widget_type as 'note' | 'image' | 'weather' | 'plant_reminder' | 'shopping_list' | 'social',
+    type: note.widget_type as Widget['type'], // Use the full Widget type union
     content: note.content,
     position: { x: note.x, y: note.y },
     rotation: note.rotation,

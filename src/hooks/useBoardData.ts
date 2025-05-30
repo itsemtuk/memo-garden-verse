@@ -75,7 +75,8 @@ export const useBoardData = (boardId: string) => {
         const friendlyError = createUserFriendlyError('Failed to create note. Please try again.');
         toast.error(friendlyError.message);
       }
-    } else if (['image', 'weather', 'plant_reminder', 'shopping_list', 'social'].includes(widget.type)) {
+    } else {
+      // Handle all other widget types (including calendar, travel_planner, etc.)
       try {
         console.log('Creating widget with type:', widget.type);
         
