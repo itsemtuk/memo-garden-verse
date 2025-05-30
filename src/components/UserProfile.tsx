@@ -8,6 +8,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { validateAndSanitizeUsername } from '@/lib/validation';
+import { handleValidationError } from '@/lib/errorHandling';
 
 interface UserProfileProps {
   onClose: () => void;
@@ -17,20 +19,26 @@ const UserProfile = ({ onClose }: UserProfileProps) => {
   const { user, profile } = useAuth();
   const [username, setUsername] = useState(profile?.username || '');
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string>('');
 
   const handleSave = async () => {
     if (!user) return;
 
     try {
       setSaving(true);
-      const { error } = await supabase
+      setError('');
+      
+      // Validate and sanitize username
+      const sanitizedUsername = validateAndSanitizeUsername(username);
+      
+      const { error: updateError } = await supabase
         .from('profiles')
-        .update({ username: username.trim() })
+        .update({ username: sanitizedUsername })
         .eq('id', user.id);
 
-      if (error) {
-        console.error('Error updating profile:', error);
-        toast.error('Failed to update profile');
+      if (updateError) {
+        console.error('Error updating profile:', updateError);
+        setError('Failed to update profile. Please try again.');
         return;
       }
 
@@ -38,7 +46,8 @@ const UserProfile = ({ onClose }: UserProfileProps) => {
       onClose();
     } catch (error) {
       console.error('Error updating profile:', error);
-      toast.error('Failed to update profile');
+      const errorMessage = handleValidationError(error);
+      setError(errorMessage);
     } finally {
       setSaving(false);
     }
@@ -62,10 +71,14 @@ const UserProfile = ({ onClose }: UserProfileProps) => {
             <Input
               id="username"
               value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              onChange={(e) => {
+                setUsername(e.target.value);
+                setError(''); // Clear error on input change
+              }}
               placeholder="Enter your username..."
-              maxLength={50}
+              maxLength={30}
             />
+            {error && <p className="text-sm text-red-600">{error}</p>}
           </div>
 
           <div className="space-y-2">

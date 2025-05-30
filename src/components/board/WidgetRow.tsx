@@ -1,7 +1,7 @@
 
-import React, { memo } from 'react';
-import { WidgetRenderer } from '@/components/widgets/WidgetRegistry';
+import React from 'react';
 import { Widget } from '@/types';
+import ResizableWidget from '@/components/widgets/ResizableWidget';
 
 interface WidgetRowProps {
   widgets: Widget[];
@@ -10,51 +10,49 @@ interface WidgetRowProps {
   onWidgetSelect: (widgetId: string) => void;
   onUpdateWidget: (widgetId: string, content: string) => void;
   onUpdateWidgetSettings?: (widgetId: string, settings: any) => void;
-  draggedWidgets?: Map<string, { x: number; y: number }>;
+  draggedWidgets: Map<string, { x: number; y: number }>;
+  readonly?: boolean;
 }
 
-const WidgetRow = memo(({ 
-  widgets, 
-  rowHeight, 
+const WidgetRow: React.FC<WidgetRowProps> = ({
+  widgets,
+  rowHeight,
   selectedWidgetId,
   onWidgetSelect,
   onUpdateWidget,
   onUpdateWidgetSettings,
-  draggedWidgets = new Map()
-}: WidgetRowProps) => {
+  draggedWidgets,
+  readonly = false,
+}) => {
   return (
-    <>
+    <div className="relative w-full" style={{ height: `${rowHeight}px` }}>
       {widgets.map((widget) => {
-        // Use dragged position if available, otherwise use widget's stored position
-        const draggedPos = draggedWidgets.get(widget.id);
-        const position = draggedPos || widget.position;
+        const draggedPosition = draggedWidgets.get(widget.id);
+        const position = draggedPosition || widget.position;
         
         return (
           <div
-            key={`${widget.id}-${widget.updatedAt?.getTime() || Date.now()}`}
+            key={widget.id}
+            className="absolute"
             style={{
-              position: 'absolute',
               left: `${position.x}px`,
-              top: `${position.y % rowHeight}px`,
-              transform: `rotate(${widget.rotation || 0}deg)`,
+              top: `${position.y}px`,
               zIndex: widget.settings?.zIndex || 1,
-              transition: draggedPos ? 'none' : 'transform 0.1s ease-out', // Smooth transition only when not dragging
             }}
           >
-            <WidgetRenderer
+            <ResizableWidget
               widget={widget}
               isSelected={selectedWidgetId === widget.id}
-              onClick={() => onWidgetSelect(widget.id)}
-              onUpdate={(content) => onUpdateWidget(widget.id, content)}
-              onUpdateSettings={(settings) => onUpdateWidgetSettings && onUpdateWidgetSettings(widget.id, settings)}
+              onSelect={readonly ? () => {} : onWidgetSelect}
+              onUpdateContent={readonly ? () => {} : onUpdateWidget}
+              onUpdateSettings={readonly ? () => {} : onUpdateWidgetSettings}
+              readonly={readonly}
             />
           </div>
         );
       })}
-    </>
+    </div>
   );
-});
-
-WidgetRow.displayName = 'WidgetRow';
+};
 
 export default WidgetRow;

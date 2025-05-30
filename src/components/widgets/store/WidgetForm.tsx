@@ -7,6 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { WidgetType } from "@/types";
 import { widgetTypes } from "./widgetTypes";
 import { StickyNote } from "lucide-react";
+import { validateContentSecurity } from "@/lib/contentSecurity";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface WidgetFormProps {
   selectedWidget: WidgetType;
@@ -44,8 +46,20 @@ export const WidgetForm = ({
   isFormValid,
   clearError
 }: WidgetFormProps) => {
+  const { user } = useAuth();
   const widgetInfo = widgetTypes.find(w => w.id === selectedWidget);
   const Icon = widgetInfo?.icon || StickyNote;
+
+  // Enhanced validation with security checks
+  const handleContentChange = (field: string, value: string) => {
+    const securityCheck = validateContentSecurity(value, user?.id);
+    if (!securityCheck.isValid) {
+      // Don't update the field if it fails security validation
+      return;
+    }
+    onFormDataChange(field, value);
+    clearError(field);
+  };
 
   const renderWidgetForm = () => {
     // For widgets that don't need forms, show simple info
@@ -70,12 +84,13 @@ export const WidgetForm = ({
               <Textarea
                 placeholder="Write your note here..."
                 value={formData.noteContent}
-                onChange={(e) => {
-                  onFormDataChange('noteContent', e.target.value);
-                  clearError('note');
-                }}
+                onChange={(e) => handleContentChange('noteContent', e.target.value)}
                 className="min-h-[100px]"
+                maxLength={5000}
               />
+              <div className="text-xs text-gray-500 mt-1">
+                {formData.noteContent.length}/5000 characters
+              </div>
               {errors.note && <p className="text-sm text-red-600 mt-1">{errors.note}</p>}
             </div>
           </div>
@@ -103,10 +118,7 @@ export const WidgetForm = ({
               <Input
                 placeholder="https://example.com/image.jpg"
                 value={formData.imageUrl}
-                onChange={(e) => {
-                  onFormDataChange('imageUrl', e.target.value);
-                  clearError('image');
-                }}
+                onChange={(e) => handleContentChange('imageUrl', e.target.value)}
               />
               {errors.image && <p className="text-sm text-red-600 mt-1">{errors.image}</p>}
             </div>
@@ -121,10 +133,8 @@ export const WidgetForm = ({
               <Input
                 placeholder="Enter city name..."
                 value={formData.weatherLocation}
-                onChange={(e) => {
-                  onFormDataChange('weatherLocation', e.target.value);
-                  clearError('weather');
-                }}
+                onChange={(e) => handleContentChange('weatherLocation', e.target.value)}
+                maxLength={100}
               />
               {errors.weather && <p className="text-sm text-red-600 mt-1">{errors.weather}</p>}
             </div>
@@ -172,10 +182,8 @@ export const WidgetForm = ({
               <Input
                 placeholder="e.g., Monstera, Fiddle Leaf Fig"
                 value={formData.plantName}
-                onChange={(e) => {
-                  onFormDataChange('plantName', e.target.value);
-                  clearError('plant');
-                }}
+                onChange={(e) => handleContentChange('plantName', e.target.value)}
+                maxLength={100}
               />
               {errors.plant && <p className="text-sm text-red-600 mt-1">{errors.plant}</p>}
             </div>

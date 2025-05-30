@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import SecurityMonitor from "@/components/SecurityMonitor";
 import Homepage from "./pages/Homepage";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
@@ -37,6 +38,7 @@ function App() {
               />
               <Route path="*" element={<NotFound />} />
             </Routes>
+            {process.env.NODE_ENV === 'development' && <SecurityMonitor />}
           </Router>
         </TooltipProvider>
       </AuthProvider>

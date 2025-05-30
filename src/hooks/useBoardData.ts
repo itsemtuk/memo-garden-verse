@@ -1,11 +1,11 @@
-
 import { useState, useCallback, useEffect } from 'react';
 import { Widget } from '@/types';
 import { CreateWidgetData } from '@/types/widget';
 import { useNotes } from './useNotes';
-import { validateAndSanitizeContent } from '@/lib/validation';
-import { createUserFriendlyError } from '@/lib/errorHandling';
+import { secureContentValidation } from '@/lib/contentSecurity';
+import { handleSecureError, logSecurityEvent } from '@/lib/secureErrorHandling';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Helper function to validate UUID format
 const isValidUUID = (str: string) => {
@@ -14,6 +14,7 @@ const isValidUUID = (str: string) => {
 };
 
 export const useBoardData = (boardId: string) => {
+  const { user } = useAuth();
   const {
     notesAsWidgets,
     loading: notesLoading,
@@ -47,8 +48,8 @@ export const useBoardData = (boardId: string) => {
     // Validate board ID format
     if (!isValidUUID(boardId)) {
       console.error('Invalid board ID format:', boardId);
-      const error = createUserFriendlyError('Invalid board selected. Please refresh and try again.');
-      toast.error(error.message);
+      logSecurityEvent('invalid_board_id', { boardId, userId: user?.id });
+      toast.error('Invalid board selected. Please refresh and try again.');
       return;
     }
 
@@ -58,30 +59,34 @@ export const useBoardData = (boardId: string) => {
 
     // Validate position bounds (prevent widgets from being placed too far off-screen)
     if (roundedX < -1000 || roundedX > 10000 || roundedY < -1000 || roundedY > 10000) {
-      const error = createUserFriendlyError('Widget position is invalid. Please try again.');
-      toast.error(error.message);
+      logSecurityEvent('invalid_widget_position', { 
+        position: { x: roundedX, y: roundedY }, 
+        userId: user?.id 
+      });
+      toast.error('Widget position is invalid. Please try again.');
       return;
     }
     
     if (widget.type === 'note') {
       try {
         console.log('Creating note widget');
-        // Validate and sanitize content
-        const sanitizedContent = validateAndSanitizeContent(widget.content);
+        // Enhanced security validation
+        const sanitizedContent = secureContentValidation(widget.content, false, user?.id);
         const createdNote = await createNote(sanitizedContent, roundedX, roundedY);
+        logSecurityEvent('note_created', { noteId: createdNote.id, userId: user?.id });
         console.log('Note created successfully:', createdNote);
       } catch (error) {
         console.error('Failed to create note:', error);
-        const friendlyError = createUserFriendlyError('Failed to create note. Please try again.');
-        toast.error(friendlyError.message);
+        const errorMessage = handleSecureError(error, 'note_creation');
+        toast.error(errorMessage);
       }
     } else {
       // Handle all other widget types (including calendar, travel_planner, etc.)
       try {
         console.log('Creating widget with type:', widget.type);
         
-        // Validate and sanitize content
-        const sanitizedContent = validateAndSanitizeContent(widget.content, true);
+        // Enhanced security validation
+        const sanitizedContent = secureContentValidation(widget.content, true, user?.id);
         
         // Validate size settings
         const sizeSettings = widget.size ? {
@@ -104,14 +109,19 @@ export const useBoardData = (boardId: string) => {
             ...widget.settings
           }
         });
+        logSecurityEvent('widget_created', { 
+          widgetId: createdWidget.id, 
+          type: widget.type, 
+          userId: user?.id 
+        });
         console.log('Widget created successfully:', createdWidget);
       } catch (error) {
         console.error('Failed to create widget:', error);
-        const friendlyError = createUserFriendlyError('Failed to create widget. Please try again.');
-        toast.error(friendlyError.message);
+        const errorMessage = handleSecureError(error, 'widget_creation');
+        toast.error(errorMessage);
       }
     }
-  }, [createNote, createWidget, boardId, getMaxZIndex]);
+  }, [createNote, createWidget, boardId, getMaxZIndex, user?.id]);
 
   const handleUpdateWidget = useCallback(async (widgetId: string, updatedContent: string) => {
     // Check if it's a note widget (from database)
@@ -119,18 +129,19 @@ export const useBoardData = (boardId: string) => {
     
     if (isNote) {
       try {
-        // Validate and sanitize content
-        const sanitizedContent = validateAndSanitizeContent(updatedContent);
+        // Enhanced security validation
+        const sanitizedContent = secureContentValidation(updatedContent, false, user?.id);
         await updateNoteContent(widgetId, sanitizedContent);
+        logSecurityEvent('note_updated', { widgetId, userId: user?.id });
       } catch (error) {
         console.error('Failed to update note:', error);
-        const friendlyError = createUserFriendlyError('Failed to update note. Please try again.');
-        toast.error(friendlyError.message);
+        const errorMessage = handleSecureError(error, 'note_update');
+        toast.error(errorMessage);
       }
     } else {
       try {
-        // Validate and sanitize content for local widgets
-        const sanitizedContent = validateAndSanitizeContent(updatedContent, true);
+        // Enhanced security validation for local widgets
+        const sanitizedContent = secureContentValidation(updatedContent, true, user?.id);
         
         // Handle image widgets locally
         setImageWidgets(prev => prev.map(widget =>
@@ -138,13 +149,14 @@ export const useBoardData = (boardId: string) => {
             ? { ...widget, content: sanitizedContent, updatedAt: new Date() }
             : widget
         ));
+        logSecurityEvent('widget_updated', { widgetId, userId: user?.id });
       } catch (error) {
         console.error('Failed to update widget:', error);
-        const friendlyError = createUserFriendlyError('Failed to update widget. Please try again.');
-        toast.error(friendlyError.message);
+        const errorMessage = handleSecureError(error, 'widget_update');
+        toast.error(errorMessage);
       }
     }
-  }, [notesAsWidgets, updateNoteContent]);
+  }, [notesAsWidgets, updateNoteContent, user?.id]);
 
   const handleUpdateWidgetSettings = useCallback(async (widgetId: string, settings: any) => {
     // Check if it's a widget from database
@@ -158,7 +170,7 @@ export const useBoardData = (boardId: string) => {
           const sanitizedSettings = Object.keys(settings).reduce((acc, key) => {
             const value = settings[key];
             if (typeof value === 'string') {
-              acc[key] = validateAndSanitizeContent(value, true);
+              acc[key] = secureContentValidation(value, true, user?.id);
             } else if (typeof value === 'object' && value !== null) {
               // Handle nested objects like size settings
               acc[key] = value;
@@ -172,8 +184,8 @@ export const useBoardData = (boardId: string) => {
         }
       } catch (error) {
         console.error('Failed to update widget settings:', error);
-        const friendlyError = createUserFriendlyError('Failed to update widget settings. Please try again.');
-        toast.error(friendlyError.message);
+        const errorMessage = handleSecureError(error, 'widget_settings_update');
+        toast.error(errorMessage);
       }
     } else {
       // Handle local widgets with validation
@@ -187,11 +199,11 @@ export const useBoardData = (boardId: string) => {
         }
       } catch (error) {
         console.error('Failed to update local widget settings:', error);
-        const friendlyError = createUserFriendlyError('Failed to update widget settings. Please try again.');
-        toast.error(friendlyError.message);
+        const errorMessage = handleSecureError(error, 'local_widget_settings_update');
+        toast.error(errorMessage);
       }
     }
-  }, [notesAsWidgets, updateWidgetSettings]);
+  }, [notesAsWidgets, updateWidgetSettings, user?.id]);
 
   const handleWidgetPositionChange = useCallback(async (widgetId: string, x: number, y: number) => {
     // Round position values to integers for database storage
@@ -202,8 +214,12 @@ export const useBoardData = (boardId: string) => {
 
     // Validate position bounds
     if (roundedX < -1000 || roundedX > 10000 || roundedY < -1000 || roundedY > 10000) {
-      const error = createUserFriendlyError('Widget position is out of bounds.');
-      toast.error(error.message);
+      logSecurityEvent('invalid_position_change', { 
+        widgetId, 
+        position: { x: roundedX, y: roundedY }, 
+        userId: user?.id 
+      });
+      toast.error('Widget position is out of bounds.');
       return;
     }
 
@@ -217,8 +233,8 @@ export const useBoardData = (boardId: string) => {
         console.log('Database note position updated successfully');
       } catch (error) {
         console.error('Failed to update note position:', error);
-        const friendlyError = createUserFriendlyError('Failed to move note. Please try again.');
-        toast.error(friendlyError.message);
+        const errorMessage = handleSecureError(error, 'note_position_update');
+        toast.error(errorMessage);
       }
     } else {
       // Handle image widgets locally
@@ -229,7 +245,7 @@ export const useBoardData = (boardId: string) => {
           : widget
       ));
     }
-  }, [notesAsWidgets, updateNotePosition]);
+  }, [notesAsWidgets, updateNotePosition, user?.id]);
 
   const handleDeleteWidget = useCallback(async (widgetId: string) => {
     try {
@@ -241,6 +257,7 @@ export const useBoardData = (boardId: string) => {
       if (isNote) {
         console.log('Deleting database widget:', widgetId);
         await deleteNote(widgetId);
+        logSecurityEvent('note_deleted', { widgetId, userId: user?.id });
         toast.success('Widget deleted successfully');
         console.log('Database widget deleted successfully');
       } else {
@@ -251,14 +268,15 @@ export const useBoardData = (boardId: string) => {
           console.log('Local widget deleted, remaining:', filtered.length);
           return filtered;
         });
+        logSecurityEvent('widget_deleted', { widgetId, userId: user?.id });
         toast.success('Widget deleted successfully');
       }
     } catch (error) {
       console.error('Failed to delete widget:', error);
-      const friendlyError = createUserFriendlyError('Failed to delete widget. Please try again.');
-      toast.error(friendlyError.message);
+      const errorMessage = handleSecureError(error, 'widget_deletion');
+      toast.error(errorMessage);
     }
-  }, [notesAsWidgets, deleteNote]);
+  }, [notesAsWidgets, deleteNote, user?.id]);
 
   const handleBringToFront = useCallback(async (widgetId: string) => {
     const newZIndex = getMaxZIndex() + 1;
