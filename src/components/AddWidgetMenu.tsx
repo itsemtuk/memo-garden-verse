@@ -8,6 +8,14 @@ import { useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { useFileUpload } from "@/hooks/useFileUpload";
 import { Cloud, Leaf, ShoppingCart, StickyNote, Image } from "lucide-react";
+import { 
+  noteContentSchema, 
+  plantNameSchema, 
+  locationSchema, 
+  imageUrlSchema,
+  validateImageFile 
+} from "@/lib/security";
+import { handleValidationError } from "@/lib/errorHandling";
 
 interface AddWidgetMenuProps {
   onAddWidget: (widget: Widget) => void;
@@ -21,21 +29,32 @@ const AddWidgetMenu = ({ onAddWidget, centerPosition, boardId }: AddWidgetMenuPr
   const [weatherLocation, setWeatherLocation] = useState("");
   const [plantName, setPlantName] = useState("");
   const [open, setOpen] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const { uploadImage, uploading } = useFileUpload(boardId);
+
+  const clearError = (field: string) => {
+    if (errors[field]) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
+  };
 
   const handleAddWidget = (type: WidgetType) => {
     const now = new Date();
-    const randomRotation = Math.floor(Math.random() * 6) - 3; // Between -3 and 3 degrees
-
+    const randomRotation = Math.floor(Math.random() * 6) - 3;
     let newWidget: Widget | null = null;
 
-    switch (type) {
-      case "note":
-        if (noteContent.trim()) {
+    try {
+      switch (type) {
+        case "note":
+          const validatedContent = noteContentSchema.parse(noteContent);
           newWidget = {
             id: uuidv4(),
             type: "note",
-            content: noteContent,
+            content: validatedContent,
             position: {
               x: centerPosition.x - 100,
               y: centerPosition.y - 50,
@@ -45,15 +64,15 @@ const AddWidgetMenu = ({ onAddWidget, centerPosition, boardId }: AddWidgetMenuPr
             updatedAt: now,
           };
           setNoteContent("");
-        }
-        break;
+          clearError('note');
+          break;
 
-      case "image":
-        if (imageUrl.trim()) {
+        case "image":
+          const validatedUrl = imageUrlSchema.parse(imageUrl);
           newWidget = {
             id: uuidv4(),
             type: "image",
-            content: imageUrl,
+            content: validatedUrl,
             position: {
               x: centerPosition.x - 150,
               y: centerPosition.y - 100,
@@ -64,11 +83,11 @@ const AddWidgetMenu = ({ onAddWidget, centerPosition, boardId }: AddWidgetMenuPr
             updatedAt: now,
           };
           setImageUrl("");
-        }
-        break;
+          clearError('image');
+          break;
 
-      case "weather":
-        if (weatherLocation.trim()) {
+        case "weather":
+          const validatedLocation = locationSchema.parse(weatherLocation);
           newWidget = {
             id: uuidv4(),
             type: "weather",
@@ -79,16 +98,16 @@ const AddWidgetMenu = ({ onAddWidget, centerPosition, boardId }: AddWidgetMenuPr
             },
             rotation: randomRotation,
             size: { width: 180, height: 120 },
-            settings: { location: weatherLocation },
+            settings: { location: validatedLocation },
             createdAt: now,
             updatedAt: now,
           };
           setWeatherLocation("");
-        }
-        break;
+          clearError('weather');
+          break;
 
-      case "plant_reminder":
-        if (plantName.trim()) {
+        case "plant_reminder":
+          const validatedPlantName = plantNameSchema.parse(plantName);
           newWidget = {
             id: uuidv4(),
             type: "plant_reminder",
@@ -100,7 +119,7 @@ const AddWidgetMenu = ({ onAddWidget, centerPosition, boardId }: AddWidgetMenuPr
             rotation: randomRotation,
             size: { width: 200, height: 140 },
             settings: {
-              plant_name: plantName,
+              plant_name: validatedPlantName,
               last_watered: new Date().toISOString(),
               water_interval_days: 3,
             },
@@ -108,30 +127,35 @@ const AddWidgetMenu = ({ onAddWidget, centerPosition, boardId }: AddWidgetMenuPr
             updatedAt: now,
           };
           setPlantName("");
-        }
-        break;
+          clearError('plant');
+          break;
 
-      case "shopping_list":
-        newWidget = {
-          id: uuidv4(),
-          type: "shopping_list",
-          content: "shopping_list",
-          position: {
-            x: centerPosition.x - 110,
-            y: centerPosition.y - 140,
-          },
-          rotation: randomRotation,
-          size: { width: 220, height: 280 },
-          settings: { items: [] },
-          createdAt: now,
-          updatedAt: now,
-        };
-        break;
-    }
+        case "shopping_list":
+          newWidget = {
+            id: uuidv4(),
+            type: "shopping_list",
+            content: "shopping_list",
+            position: {
+              x: centerPosition.x - 110,
+              y: centerPosition.y - 140,
+            },
+            rotation: randomRotation,
+            size: { width: 220, height: 280 },
+            settings: { items: [] },
+            createdAt: now,
+            updatedAt: now,
+          };
+          break;
+      }
 
-    if (newWidget) {
-      onAddWidget(newWidget);
-      setOpen(false);
+      if (newWidget) {
+        onAddWidget(newWidget);
+        setOpen(false);
+      }
+    } catch (error) {
+      const errorMessage = handleValidationError(error);
+      const errorField = type === 'plant_reminder' ? 'plant' : type;
+      setErrors(prev => ({ ...prev, [errorField]: errorMessage }));
     }
   };
 
@@ -139,7 +163,14 @@ const AddWidgetMenu = ({ onAddWidget, centerPosition, boardId }: AddWidgetMenuPr
     const file = event.target.files?.[0];
     if (!file) return;
 
+    const validation = validateImageFile(file);
+    if (!validation.isValid) {
+      setErrors(prev => ({ ...prev, file: validation.error! }));
+      return;
+    }
+
     try {
+      clearError('file');
       const imageUrl = await uploadImage(file);
       const now = new Date();
       const randomRotation = Math.floor(Math.random() * 6) - 3;
@@ -161,7 +192,7 @@ const AddWidgetMenu = ({ onAddWidget, centerPosition, boardId }: AddWidgetMenuPr
       onAddWidget(newImage);
       setOpen(false);
     } catch (error) {
-      console.error('Failed to upload image:', error);
+      setErrors(prev => ({ ...prev, file: 'Failed to upload image. Please try again.' }));
     }
   };
 
@@ -203,8 +234,14 @@ const AddWidgetMenu = ({ onAddWidget, centerPosition, boardId }: AddWidgetMenuPr
                 className="w-full rounded-md border border-input bg-transparent px-3 py-2 min-h-[100px]"
                 placeholder="Write your note here..."
                 value={noteContent}
-                onChange={(e) => setNoteContent(e.target.value)}
+                onChange={(e) => {
+                  setNoteContent(e.target.value);
+                  clearError('note');
+                }}
               />
+              {errors.note && (
+                <p className="text-sm text-red-600">{errors.note}</p>
+              )}
             </div>
             <Button
               className="w-full bg-garden-primary hover:bg-garden-secondary"
@@ -223,23 +260,32 @@ const AddWidgetMenu = ({ onAddWidget, centerPosition, boardId }: AddWidgetMenuPr
                 <label className="text-sm font-medium">Upload Image</label>
                 <input
                   type="file"
-                  accept="image/*"
+                  accept="image/jpeg,image/png,image/gif,image/webp"
                   onChange={handleFileUpload}
                   disabled={uploading}
                   className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-garden-primary file:text-white hover:file:bg-garden-secondary"
                 />
+                {errors.file && (
+                  <p className="text-sm text-red-600">{errors.file}</p>
+                )}
               </div>
 
               <div className="text-center text-sm text-muted-foreground">or</div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium">Image URL</label>
+                <label className="text-sm font-medium">Image URL (HTTPS only)</label>
                 <Input
-                  placeholder="Enter image URL..."
+                  placeholder="https://example.com/image.jpg"
                   value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
+                  onChange={(e) => {
+                    setImageUrl(e.target.value);
+                    clearError('image');
+                  }}
                   className="col-span-3"
                 />
+                {errors.image && (
+                  <p className="text-sm text-red-600">{errors.image}</p>
+                )}
               </div>
             </div>
             <Button
@@ -257,8 +303,14 @@ const AddWidgetMenu = ({ onAddWidget, centerPosition, boardId }: AddWidgetMenuPr
               <Input
                 placeholder="Enter location (e.g., London, New York)"
                 value={weatherLocation}
-                onChange={(e) => setWeatherLocation(e.target.value)}
+                onChange={(e) => {
+                  setWeatherLocation(e.target.value);
+                  clearError('weather');
+                }}
               />
+              {errors.weather && (
+                <p className="text-sm text-red-600">{errors.weather}</p>
+              )}
             </div>
             <Button
               className="w-full bg-garden-primary hover:bg-garden-secondary"
@@ -275,8 +327,14 @@ const AddWidgetMenu = ({ onAddWidget, centerPosition, boardId }: AddWidgetMenuPr
               <Input
                 placeholder="Plant name (e.g., Monstera, Fiddle Leaf Fig)"
                 value={plantName}
-                onChange={(e) => setPlantName(e.target.value)}
+                onChange={(e) => {
+                  setPlantName(e.target.value);
+                  clearError('plant');
+                }}
               />
+              {errors.plant && (
+                <p className="text-sm text-red-600">{errors.plant}</p>
+              )}
               <p className="text-xs text-gray-600">
                 Default watering interval: 3 days
               </p>

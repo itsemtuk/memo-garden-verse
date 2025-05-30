@@ -5,6 +5,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { useState } from "react";
 import { Droplets, Leaf } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { createSystemError } from "@/lib/errorHandling";
 
 interface PlantReminderWidgetProps {
   widget: Widget;
@@ -17,6 +18,7 @@ const PlantReminderWidget = ({ widget, isSelected, onClick, onUpdate }: PlantRem
   const plantName = widget.settings?.plant_name || "My Plant";
   const lastWatered = widget.settings?.last_watered || new Date().toISOString();
   const waterIntervalDays = widget.settings?.water_interval_days || 3;
+  const [error, setError] = useState<string>("");
 
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: widget.id,
@@ -35,13 +37,20 @@ const PlantReminderWidget = ({ widget, isSelected, onClick, onUpdate }: PlantRem
   const needsWater = daysSinceWatered >= waterIntervalDays;
   const daysUntilWater = Math.max(0, waterIntervalDays - daysSinceWatered);
 
-  const handleWatering = (e: React.MouseEvent) => {
+  const handleWatering = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    const newSettings = {
-      ...widget.settings,
-      last_watered: new Date().toISOString(),
-    };
-    onUpdate?.(newSettings);
+    setError("");
+    
+    try {
+      const newSettings = {
+        ...widget.settings,
+        last_watered: new Date().toISOString(),
+      };
+      onUpdate?.(newSettings);
+    } catch (error) {
+      const appError = createSystemError(error, "Failed to update watering status. Please try again.");
+      setError(appError.message);
+    }
   };
 
   return (
@@ -84,6 +93,10 @@ const PlantReminderWidget = ({ widget, isSelected, onClick, onUpdate }: PlantRem
             </div>
           )}
         </div>
+        
+        {error && (
+          <div className="text-xs text-red-600 mb-2 text-center">{error}</div>
+        )}
         
         <Button
           onClick={handleWatering}
