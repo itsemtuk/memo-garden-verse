@@ -15,6 +15,7 @@ interface VirtualizedBoardProps {
   onWidgetSelect: (widgetId: string) => void;
   onUpdateWidget: (widgetId: string, content: string) => void;
   onUpdateWidgetSettings?: (widgetId: string, settings: any) => void;
+  draggedWidgets?: Map<string, { x: number; y: number }>;
 }
 
 const VirtualizedBoard: React.FC<VirtualizedBoardProps> = ({
@@ -27,6 +28,7 @@ const VirtualizedBoard: React.FC<VirtualizedBoardProps> = ({
   onWidgetSelect,
   onUpdateWidget,
   onUpdateWidgetSettings,
+  draggedWidgets = new Map(),
 }) => {
   const { parentRef, rowVirtualizer, widgetRows, ROW_HEIGHT } = useBoardVirtualization({ widgets });
 
@@ -34,7 +36,7 @@ const VirtualizedBoard: React.FC<VirtualizedBoardProps> = ({
     <div 
       ref={parentRef}
       className="cork-board board-canvas relative w-full overflow-auto select-none h-[calc(100vh-64px)]"
-      style={{ contain: 'layout style paint' }} // Optimize for performance
+      style={{ contain: 'layout style paint' }}
     >
       <DndContext 
         sensors={sensors} 
@@ -71,6 +73,7 @@ const VirtualizedBoard: React.FC<VirtualizedBoardProps> = ({
                   onWidgetSelect={onWidgetSelect}
                   onUpdateWidget={onUpdateWidget}
                   onUpdateWidgetSettings={onUpdateWidgetSettings}
+                  draggedWidgets={draggedWidgets}
                 />
               </div>
             );

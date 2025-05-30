@@ -10,6 +10,7 @@ interface WidgetRowProps {
   onWidgetSelect: (widgetId: string) => void;
   onUpdateWidget: (widgetId: string, content: string) => void;
   onUpdateWidgetSettings?: (widgetId: string, settings: any) => void;
+  draggedWidgets?: Map<string, { x: number; y: number }>;
 }
 
 const WidgetRow = memo(({ 
@@ -18,30 +19,38 @@ const WidgetRow = memo(({
   selectedWidgetId,
   onWidgetSelect,
   onUpdateWidget,
-  onUpdateWidgetSettings 
+  onUpdateWidgetSettings,
+  draggedWidgets = new Map()
 }: WidgetRowProps) => {
   return (
     <>
-      {widgets.map((widget) => (
-        <div
-          key={`${widget.id}-${widget.updatedAt?.getTime() || Date.now()}`}
-          style={{
-            position: 'absolute',
-            left: `${widget.position.x}px`,
-            top: `${widget.position.y % rowHeight}px`, // Position within the virtual row
-            transform: `rotate(${widget.rotation || 0}deg)`,
-            zIndex: widget.settings?.zIndex || 1,
-          }}
-        >
-          <WidgetRenderer
-            widget={widget}
-            isSelected={selectedWidgetId === widget.id}
-            onClick={() => onWidgetSelect(widget.id)}
-            onUpdate={(content) => onUpdateWidget(widget.id, content)}
-            onUpdateSettings={(settings) => onUpdateWidgetSettings && onUpdateWidgetSettings(widget.id, settings)}
-          />
-        </div>
-      ))}
+      {widgets.map((widget) => {
+        // Use dragged position if available, otherwise use widget's stored position
+        const draggedPos = draggedWidgets.get(widget.id);
+        const position = draggedPos || widget.position;
+        
+        return (
+          <div
+            key={`${widget.id}-${widget.updatedAt?.getTime() || Date.now()}`}
+            style={{
+              position: 'absolute',
+              left: `${position.x}px`,
+              top: `${position.y % rowHeight}px`,
+              transform: `rotate(${widget.rotation || 0}deg)`,
+              zIndex: widget.settings?.zIndex || 1,
+              transition: draggedPos ? 'none' : 'transform 0.1s ease-out', // Smooth transition only when not dragging
+            }}
+          >
+            <WidgetRenderer
+              widget={widget}
+              isSelected={selectedWidgetId === widget.id}
+              onClick={() => onWidgetSelect(widget.id)}
+              onUpdate={(content) => onUpdateWidget(widget.id, content)}
+              onUpdateSettings={(settings) => onUpdateWidgetSettings && onUpdateWidgetSettings(widget.id, settings)}
+            />
+          </div>
+        );
+      })}
     </>
   );
 });

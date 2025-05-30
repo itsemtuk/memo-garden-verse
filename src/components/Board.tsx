@@ -1,3 +1,4 @@
+
 import WidgetStore from "@/components/WidgetStore";
 import { Widget } from "@/types";
 import { DragEndEvent, DragStartEvent, DragMoveEvent, PointerSensor, TouchSensor, useSensor, useSensors } from "@dnd-kit/core";
@@ -43,6 +44,7 @@ const Board = ({ boardId, onUpdate }: BoardProps) => {
   const [centerPosition, setCenterPosition] = useState({ x: 200, y: 150 });
   const [draggedWidget, setDraggedWidget] = useState<{ id: string; startPosition: { x: number; y: number } } | null>(null);
   const [showMobileWidgetStore, setShowMobileWidgetStore] = useState(false);
+  const [draggedWidgets, setDraggedWidgets] = useState<Map<string, { x: number; y: number }>>(new Map());
   const boardRef = useRef<HTMLDivElement>(null);
 
   // Debug logging for widgets
@@ -105,13 +107,13 @@ const Board = ({ boardId, onUpdate }: BoardProps) => {
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: isMobile ? 10 : 3,
+        distance: isMobile ? 8 : 2,
       },
     }),
     useSensor(TouchSensor, {
       activationConstraint: {
-        delay: isMobile ? 150 : 100,
-        tolerance: isMobile ? 10 : 5,
+        delay: isMobile ? 100 : 50,
+        tolerance: isMobile ? 8 : 3,
       },
     })
   );
@@ -131,24 +133,24 @@ const Board = ({ boardId, onUpdate }: BoardProps) => {
   }, [widgets]);
 
   const handleDragMove = useCallback((event: DragMoveEvent) => {
-    // Real-time position update during drag for smooth experience
-    if (draggedWidget) {
+    if (draggedWidget && event.delta) {
       const newX = draggedWidget.startPosition.x + event.delta.x;
       const newY = draggedWidget.startPosition.y + event.delta.y;
       
-      // Update widget position in real-time during drag
-      const widget = widgets.find(w => w.id === draggedWidget.id);
-      if (widget) {
-        widget.position = { x: newX, y: newY };
-      }
+      // Update temporary drag positions for smooth animation
+      setDraggedWidgets(prev => new Map(prev.set(draggedWidget.id, { x: newX, y: newY })));
     }
-  }, [draggedWidget, widgets]);
+  }, [draggedWidget]);
 
   const handleDragEnd = useCallback(async (event: DragEndEvent) => {
     const { active, delta } = event;
     const widgetId = active.id as string;
     
-    if (!draggedWidget) return;
+    if (!draggedWidget || !delta) {
+      setDraggedWidget(null);
+      setDraggedWidgets(new Map());
+      return;
+    }
 
     const newX = draggedWidget.startPosition.x + delta.x;
     const newY = draggedWidget.startPosition.y + delta.y;
@@ -156,12 +158,17 @@ const Board = ({ boardId, onUpdate }: BoardProps) => {
     console.log('Drag end - widget:', widgetId, 'new position:', { newX, newY });
 
     try {
+      // Clear temporary drag state immediately for responsiveness
+      setDraggedWidgets(new Map());
+      setDraggedWidget(null);
+      
+      // Persist to database
       await handleWidgetPositionChange(widgetId, newX, newY);
       console.log('Widget position updated successfully');
     } catch (error) {
       console.error('Failed to update widget position:', error);
-    } finally {
-      setDraggedWidget(null);
+      // Revert on error by refreshing
+      setDraggedWidgets(new Map());
     }
   }, [draggedWidget, handleWidgetPositionChange]);
 
@@ -245,6 +252,7 @@ const Board = ({ boardId, onUpdate }: BoardProps) => {
         onWidgetSelect={handleWidgetSelect}
         onUpdateWidget={handleUpdateWidget}
         onUpdateWidgetSettings={handleUpdateWidgetSettings}
+        draggedWidgets={draggedWidgets}
       />
 
       {/* Collaboration cursors */}
