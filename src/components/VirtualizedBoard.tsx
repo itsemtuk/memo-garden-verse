@@ -32,6 +32,23 @@ const VirtualizedBoard: React.FC<VirtualizedBoardProps> = ({
   readonly = false,
 }) => {
   console.log('VirtualizedBoard rendering with widgets:', widgets.length);
+  console.log('Sensors:', sensors);
+  console.log('Readonly mode:', readonly);
+
+  const handleDragStart = (event: DragStartEvent) => {
+    console.log('VirtualizedBoard handleDragStart called:', event);
+    onDragStart(event);
+  };
+
+  const handleDragMove = (event: DragMoveEvent) => {
+    console.log('VirtualizedBoard handleDragMove called:', event);
+    onDragMove(event);
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    console.log('VirtualizedBoard handleDragEnd called:', event);
+    onDragEnd(event);
+  };
 
   return (
     <div 
@@ -44,9 +61,9 @@ const VirtualizedBoard: React.FC<VirtualizedBoardProps> = ({
     >
       <DndContext 
         sensors={readonly ? [] : sensors} 
-        onDragStart={readonly ? undefined : onDragStart}
-        onDragMove={readonly ? undefined : onDragMove}
-        onDragEnd={readonly ? undefined : onDragEnd}
+        onDragStart={readonly ? undefined : handleDragStart}
+        onDragMove={readonly ? undefined : handleDragMove}
+        onDragEnd={readonly ? undefined : handleDragEnd}
       >
         <div className="relative w-full h-full">
           <WidgetRow

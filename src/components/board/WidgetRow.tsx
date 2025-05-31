@@ -29,6 +29,7 @@ const DraggableWidget: React.FC<{
     listeners,
     setNodeRef,
     isDragging,
+    transform,
   } = useDraggable({
     id: widget.id,
     disabled: readonly,
@@ -37,33 +38,38 @@ const DraggableWidget: React.FC<{
   // Use draggedPosition if available (during drag), otherwise use widget position
   const currentPosition = draggedPosition || widget.position;
   
-  console.log(`Widget ${widget.id} rendered at position:`, currentPosition, 'isDragging:', isDragging, 'draggedPosition:', draggedPosition);
+  console.log(`Widget ${widget.id} rendered at position:`, currentPosition, 'isDragging:', isDragging, 'draggedPosition:', draggedPosition, 'transform:', transform);
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!readonly) {
+    if (!readonly && !isDragging) {
+      console.log('Widget clicked:', widget.id);
       onSelect();
     }
   };
 
   const handleWidgetClick = () => {
-    if (!readonly) {
+    if (!readonly && !isDragging) {
+      console.log('Widget renderer clicked:', widget.id);
       onSelect();
     }
+  };
+
+  // Apply transform during dragging if no draggedPosition is provided
+  const style: React.CSSProperties = {
+    left: `${currentPosition.x}px`,
+    top: `${currentPosition.y}px`,
+    zIndex: isDragging ? 1000 : (widget.settings?.zIndex || 1),
+    transform: `rotate(${widget.rotation || 0}deg) ${transform && !draggedPosition ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : ''}`,
+    pointerEvents: 'auto',
+    transition: isDragging ? 'none' : 'all 0.2s ease',
   };
 
   return (
     <div
       ref={setNodeRef}
       className={`absolute ${isDragging ? 'opacity-70 z-[1000]' : ''} ${readonly ? '' : 'cursor-move'}`}
-      style={{
-        left: `${currentPosition.x}px`,
-        top: `${currentPosition.y}px`,
-        zIndex: isDragging ? 1000 : (widget.settings?.zIndex || 1),
-        transform: `rotate(${widget.rotation || 0}deg)`,
-        pointerEvents: 'auto',
-        transition: isDragging ? 'none' : 'all 0.2s ease',
-      }}
+      style={style}
       {...attributes}
       {...(readonly ? {} : listeners)}
       onClick={handleClick}
