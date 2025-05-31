@@ -78,16 +78,17 @@ const Board = ({ boardId, onUpdate }: BoardProps) => {
     setSelectedWidgetId
   });
 
+  // Configure sensors with more permissive settings for better drag detection
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: isMobile ? 8 : 2,
+        distance: 1, // Very small distance to start drag
       },
     }),
     useSensor(TouchSensor, {
       activationConstraint: {
-        delay: isMobile ? 100 : 50,
-        tolerance: isMobile ? 8 : 3,
+        delay: 50, // Short delay for touch
+        tolerance: 5,
       },
     })
   );
@@ -120,7 +121,8 @@ const Board = ({ boardId, onUpdate }: BoardProps) => {
     );
   }
 
-  console.log('Rendering board with widgets:', widgets.length);
+  console.log('Board: Rendering board with widgets:', widgets.length);
+  console.log('Board: Sensors configured:', sensors.length);
 
   return (
     <div 
