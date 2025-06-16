@@ -86,7 +86,7 @@ Before submitting, please ensure:
 4. **Document its usage** in `widgets.md`.
 5. **Test** for drag, resize, rotate, and real-time sync.
 
-See [Widget System Guide](./widgets.md) for details.
+See [Widget System Guide](./docs/widgets.md) for details.
 
 ---
 
