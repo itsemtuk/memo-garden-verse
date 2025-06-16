@@ -1,3 +1,5 @@
+> **Note:** MemoGarden is currently in active development and has not yet been officially released. All features and timelines are subject to change as the project evolves.
+
 # 🌱 MemoGarden
 
 MemoGarden is a collaborative online notice board and digital pinboard platform. Inspired by real-life corkboards and gardens, MemoGarden lets you create, share, and explore interactive boards filled with draggable notes, images, and powerful widgets—all in real time.
