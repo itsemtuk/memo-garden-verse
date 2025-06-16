@@ -102,7 +102,7 @@ MemoGarden uses a **Widget Registry** architecture, making it easy to add new wi
 We welcome new widget ideas and contributions!  
 - Open an issue or discussion to propose a widget.
 - Submit a pull request following the steps above.
-- See [CONTRIBUTING.md](./CONTRIBUTING.md) for details.
+- See [CONTRIBUTING.md](../CONTRIBUTING.md) for details.
 
 ---
 
